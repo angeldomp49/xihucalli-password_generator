@@ -8,7 +8,10 @@
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
+    `maven-publish`
 }
+
+project.version = "1.0.0"
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -40,4 +43,16 @@ java {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "org.makechtec.xihucalli"
+            artifactId = "password_generator"
+            version = project.version.toString()
+
+            from(components["java"])
+        }
+    }
 }
