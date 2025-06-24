@@ -1,13 +1,31 @@
 package org.makechtec.xihucalli.password_generator;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PasswordGeneratorTest {
+    
+    private ApplicationPropertiesLoader applicationPropertiesLoader;
+    private PasswordGenerator passwordGenerator;
+    
+    @BeforeEach
+    void setUp() {
+        applicationPropertiesLoader = new ApplicationPropertiesLoader();
+        applicationPropertiesLoader.load("application.properties");
+        var properties = applicationPropertiesLoader.getProperties();
+        
+        passwordGenerator = new PasswordGenerator(
+                (String) properties.get("password-generator.numbers.list"),
+                (String) properties.get("password-generator.symbols.list"),
+                (String) properties.get("password-generator.letters.list")
+        );
+    }
 
     @Test
     void generatePassword() {
@@ -37,7 +55,7 @@ class PasswordGeneratorTest {
                 }
                 """;
 
-        var passwordGenerator = new PasswordGenerator();
+        
         var password = passwordGenerator.generatePassword(rules);
 
         assertNotNull(password);
@@ -82,7 +100,6 @@ class PasswordGeneratorTest {
                 }
                 """;
 
-        var passwordGenerator = new PasswordGenerator();
         var password = passwordGenerator.generatePassword(rules);
 
         System.out.println(password);
@@ -124,7 +141,6 @@ class PasswordGeneratorTest {
                 }
                 """;
 
-        var passwordGenerator = new PasswordGenerator();
         var password = passwordGenerator.generatePassword(rules);
 
         System.out.println(password);
@@ -176,7 +192,6 @@ class PasswordGeneratorTest {
                 }
                 """;
 
-        var passwordGenerator = new PasswordGenerator();
         var password = passwordGenerator.generatePassword(rules);
 
         System.out.println(password);
@@ -221,7 +236,6 @@ class PasswordGeneratorTest {
                 }
                 """;
 
-        var passwordGenerator = new PasswordGenerator();
         var password = passwordGenerator.generatePassword(rules);
 
         System.out.println(password);

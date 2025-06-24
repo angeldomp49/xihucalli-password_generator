@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -12,31 +13,15 @@ import java.util.stream.Stream;
 public class PasswordGenerator {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final List<Character> DIGITS = Stream.of(
-            '0',
-            '1',
-            '2',
-            '3',
-            '4',
-            '5',
-            '6',
-            '7',
-            '8',
-            '9'
-    ).toList();
-    private static final List<Character> SYMBOLS = Stream.of(
-            '!', '@', '#', '$', '%', '^', '&', '*', '(',
-            ')', '_', '+', '=', '-', '[', ']', '{', '}', ';', '\'',
-            ':', '\\', '"', ',', '.', '/', '<', '>', '?'
-    ).toList();
+    private final List<Character> digitsList;
+    private final List<Character> symbolsList;
+    private final List<Character> lettersList;
 
-    private static final List<Character> LETTERS = Stream.of(
-            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-            'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-            'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F',
-            'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
-            'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-    ).toList();
+    public PasswordGenerator(String digitsList, String symbolsList, String lettersList) {
+        this.digitsList = fromString(digitsList);
+        this.symbolsList = fromString(symbolsList);
+        this.lettersList = fromString(lettersList);
+    }
 
     public String generatePassword(String jsonRules) {
 
@@ -91,9 +76,9 @@ public class PasswordGenerator {
         range.addAll(passwordRulesInformation.getIncludedLetters());
 
         if (range.isEmpty()) {
-            range.addAll(DIGITS);
-            range.addAll(LETTERS);
-            range.addAll(SYMBOLS);
+            range.addAll(digitsList);
+            range.addAll(lettersList);
+            range.addAll(symbolsList);
         }
 
         for (int i = 0; i < maxLength; i++) {
@@ -121,7 +106,7 @@ public class PasswordGenerator {
     }
 
     private boolean areDigitsValid(List<Character> password, PasswordRulesInformation passwordRulesInformation) {
-        var digitsCount = password.stream().filter(DIGITS::contains).count();
+        var digitsCount = password.stream().filter(digitsList::contains).count();
 
         var allDigitsValidity = false;
 
@@ -165,7 +150,7 @@ public class PasswordGenerator {
     }
 
     private boolean areSymbolsValid(List<Character> password, PasswordRulesInformation passwordRulesInformation) {
-        var symbolsCount = password.stream().filter(SYMBOLS::contains).count();
+        var symbolsCount = password.stream().filter(symbolsList::contains).count();
 
         var allSymbolsValidity = false;
 
@@ -320,4 +305,12 @@ public class PasswordGenerator {
         return passwordRulesInformation;
     }
 
+    private List<Character> fromString(String str) {
+        var result = new ArrayList<Character>();
+        for (var c: str.toCharArray()) {
+            result.add(c);
+        }
+        
+        return result;
+    }
 }
