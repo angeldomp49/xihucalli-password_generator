@@ -3,8 +3,6 @@ package org.makechtec.xihucalli.password_generator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,13 +10,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class PasswordGeneratorTest {
 
     private PasswordGenerator passwordGenerator;
-    
+
     @BeforeEach
     void setUp() {
         ApplicationPropertiesLoader applicationPropertiesLoader = new ApplicationPropertiesLoader();
         applicationPropertiesLoader.load("application.properties");
         var properties = applicationPropertiesLoader.getProperties();
-        
+
         passwordGenerator = new PasswordGenerator(
                 (String) properties.get("password-generator.numbers.list"),
                 (String) properties.get("password-generator.symbols.list"),
@@ -54,7 +52,7 @@ class PasswordGeneratorTest {
                 }
                 """;
 
-        
+
         var password = passwordGenerator.generatePassword(rules);
 
         assertNotNull(password);

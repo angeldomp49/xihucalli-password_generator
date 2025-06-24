@@ -5,10 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class PasswordGenerator {
 
@@ -307,10 +305,10 @@ public class PasswordGenerator {
 
     private List<Character> fromString(String str) {
         var result = new ArrayList<Character>();
-        for (var c: str.toCharArray()) {
+        for (var c : str.toCharArray()) {
             result.add(c);
         }
-        
+
         return result;
     }
 }
