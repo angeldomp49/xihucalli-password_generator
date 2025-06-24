@@ -10,13 +10,12 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PasswordGeneratorTest {
-    
-    private ApplicationPropertiesLoader applicationPropertiesLoader;
+
     private PasswordGenerator passwordGenerator;
     
     @BeforeEach
     void setUp() {
-        applicationPropertiesLoader = new ApplicationPropertiesLoader();
+        ApplicationPropertiesLoader applicationPropertiesLoader = new ApplicationPropertiesLoader();
         applicationPropertiesLoader.load("application.properties");
         var properties = applicationPropertiesLoader.getProperties();
         
