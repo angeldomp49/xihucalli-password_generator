@@ -55,4 +55,14 @@ publishing {
             from(components["java"])
         }
     }
+
+    repositories {
+        maven {
+            url = uri("https://makech-technology-879381274336.d.codeartifact.us-east-2.amazonaws.com/maven/makech-technology-maven-repository/")
+            credentials {
+                username = "aws"
+                password = System.getenv("CODEARTIFACT_AUTH_TOKEN")
+            }
+        }
+    }
 }
