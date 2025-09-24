@@ -20,7 +20,7 @@ extensions.configure<JacocoPluginExtension> {
     toolVersion = "0.8.10"
 }
 
-project.version = "1.0.0"
+project.version = "1.2.0"
 
 repositories {
     // Use Maven Central for resolving dependencies.
