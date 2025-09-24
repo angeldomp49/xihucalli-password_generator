@@ -5,10 +5,19 @@
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/8.14.2/userguide/building_java_projects.html in the Gradle documentation.
  */
 
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
     `maven-publish`
+    id("jacoco")
+}
+
+// Configure JaCoCo extension explicitly to avoid unresolved reference in static analysis
+extensions.configure<JacocoPluginExtension> {
+    toolVersion = "0.8.10"
 }
 
 project.version = "1.0.0"
@@ -43,6 +52,46 @@ java {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    // Ensure report task runs after tests
+    finalizedBy("jacocoTestReport")
+}
+
+// Replace unconditional registration with a guarded configuration so we don't register the task twice
+val existingJacoco = tasks.findByName("jacocoTestReport") as? JacocoReport
+if (existingJacoco == null) {
+    tasks.register<JacocoReport>("jacocoTestReport") {
+        dependsOn(tasks.named("test"))
+
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
+
+        // Adjust paths if your sources/classes are in different locations
+        val mainSrc = "src/main/java"
+        classDirectories.setFrom(fileTree("${buildDir}/classes/java/main") {
+            // exclude generated or irrelevant classes if needed
+            exclude("**/R.class", """**/R${'$'}*.class""", """**/*${'$'}ViewInjector*.*""")
+        })
+        sourceDirectories.setFrom(files(mainSrc))
+        executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec", "**/*.exec"))
+    }
+} else {
+    existingJacoco.apply {
+        dependsOn(tasks.named("test"))
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
+        val mainSrc = "src/main/java"
+        classDirectories.setFrom(fileTree("${buildDir}/classes/java/main") {
+            exclude("**/R.class", """**/R${'$'}*.class""", """**/*${'$'}ViewInjector*.*""")
+        })
+        sourceDirectories.setFrom(files(mainSrc))
+        executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec", "**/*.exec"))
+    }
 }
 
 publishing {
