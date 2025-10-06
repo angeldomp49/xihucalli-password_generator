@@ -35,6 +35,7 @@ public class PasswordGenerator {
         try {
             var passwordRules = hydrateRules(jsonRules);
             validatePasswordRules(passwordRules);
+            
 
             for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
                 var candidatePassword = createSecurePassword(passwordRules);

@@ -60,9 +60,50 @@ java {
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
+    
+    // Configuración específica para Concordion
     systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    
+    // Asegurar que las pruebas de Concordion se incluyan
+    include("**/*Test.class")
+    include("**/*Spec*.class")
+    
     testLogging {
         events("passed", "skipped", "failed")
+        showStandardStreams = false
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    
+    // Crear el directorio de reportes de Concordion antes de ejecutar las pruebas
+    doFirst {
+        mkdir(layout.buildDirectory.dir("reports/concordion").get().asFile)
+    }
+}
+
+// Tarea específica para ejecutar solo las pruebas de Concordion
+tasks.register<Test>("concordionTest") {
+    useJUnitPlatform()
+    group = "verification"
+    description = "Runs Concordion specification tests and generates reports"
+    
+    // Incluir las pruebas que contengan 'Spec' o 'Concordion' en el nombre
+    include("**/*SpecTest.class")
+    include("**/*ConcordionTest.class")
+    
+    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    
+    doFirst {
+        mkdir(layout.buildDirectory.dir("reports/concordion").get().asFile)
+    }
+    
+    doLast {
+        println("Concordion reports generated at: ${layout.buildDirectory.dir("reports/concordion").get().asFile}")
     }
 }
 
