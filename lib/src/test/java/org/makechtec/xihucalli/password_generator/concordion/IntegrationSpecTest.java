@@ -215,61 +215,87 @@ public class IntegrationSpecTest {
         return springContext.containsKey(beanName);
     }
 
-    public boolean loadProperties(String filename) {
-        if (propertiesLoader == null) {
-            setUp();
+    private boolean loadProperties(String filename) {
+        try {
+            if (propertiesLoader == null) {
+                propertiesLoader = new ApplicationPropertiesLoader();
+            }
+            propertiesLoader.load(filename);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
-        propertiesLoader.load(filename);
-        return propertiesLoader.getProperties() != null && !propertiesLoader.getProperties().isEmpty();
     }
 
-    public String getProperty(String key) {
-        if (propertiesLoader == null) {
+    private String getProperty(String key) {
+        if (propertiesLoader == null || propertiesLoader.getProperties() == null) {
             return null;
         }
         return (String) propertiesLoader.getProperties().get(key);
     }
 
-    public boolean handleInvalidInput(String invalidInput) {
+    private boolean handleInvalidInput(String jsonRules) {
         try {
             if (passwordGenerator == null) {
                 setUp();
             }
-            passwordGenerator.generatePassword(invalidInput);
+            passwordGenerator.generatePassword(jsonRules);
             return false;
         } catch (Exception e) {
             return true;
         }
     }
 
-    public boolean testConcurrentGeneration(int threadCount) {
+    private boolean testConcurrentGeneration(int threadCount) {
         if (passwordGenerator == null) {
             setUp();
         }
-        
-        CompletableFuture<String>[] futures = new CompletableFuture[threadCount];
-        
-        for (int i = 0; i < threadCount; i++) {
-            futures[i] = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return passwordGenerator.generatePassword("{\"minLength\":8,\"maxLength\":12}");
-                } catch (Exception e) {
-                    return null;
+
+        List<Future<String>> futures = new ArrayList<>();
+        String validJsonRules = """
+                {
+                  "length": {
+                    "min": 8,
+                    "max": 12
+                  },
+                  "digits": {
+                    "min": 2,
+                    "max": 12,
+                    "exclude": [],
+                    "include": []
+                  },
+                  "symbols": {
+                    "min": 1,
+                    "max": 12,
+                    "exclude": [],
+                    "include": []
+                  },
+                  "letters": {
+                    "exclude": [],
+                    "include": []
+                  }
                 }
-            }, executorService);
-        }
-        
+                """;
+
         try {
-            CompletableFuture.allOf(futures).get(5, TimeUnit.SECONDS);
-            return Arrays.stream(futures)
-                    .allMatch(future -> {
-                        try {
-                            String result = future.get();
-                            return result != null && !result.isEmpty();
-                        } catch (Exception e) {
-                            return false;
-                        }
-                    });
+            for (int i = 0; i < threadCount; i++) {
+                Future<String> future = executorService.submit(() -> {
+                    try {
+                        return passwordGenerator.generatePassword(validJsonRules);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                });
+                futures.add(future);
+            }
+
+            for (Future<String> future : futures) {
+                String password = future.get(5, TimeUnit.SECONDS);
+                if (password == null || password.isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
         } catch (Exception e) {
             return false;
         }

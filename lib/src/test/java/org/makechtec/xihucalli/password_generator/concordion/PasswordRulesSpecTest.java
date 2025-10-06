@@ -1,5 +1,6 @@
 package org.makechtec.xihucalli.password_generator.concordion;
 
+import org.concordion.api.FullOGNL;
 import org.concordion.integration.junit4.ConcordionRunner;
 import org.junit.runner.RunWith;
 import org.makechtec.xihucalli.password_generator.ApplicationPropertiesLoader;
@@ -29,80 +30,338 @@ public class PasswordRulesSpecTest {
     }
 
     public long getMinLength() {
-        return passwordRules.getMinLength();
+        return passwordRules != null ? passwordRules.getMinLength() : 0;
     }
 
     public long getMaxLength() {
-        return passwordRules.getMaxLength();
+        return passwordRules != null ? passwordRules.getMaxLength() : 0;
     }
 
     public long getMinDigits() {
-        return passwordRules.getMinNumberOfDigits();
+        return passwordRules != null ? passwordRules.getMinNumberOfDigits() : 0;
     }
 
     public long getMinSymbols() {
-        return passwordRules.getMinNumberOfSymbols();
+        return passwordRules != null ? passwordRules.getMinNumberOfSymbols() : 0;
     }
 
-    public void setIncludedDigits(List<Integer> digits) {
+    public long getMaxDigits() {
+        return passwordRules != null ? passwordRules.getMaxNumberOfDigits() : 0;
+    }
+
+    public long getMaxSymbols() {
+        return passwordRules != null ? passwordRules.getMaxNumberOfSymbols() : 0;
+    }
+
+    public void setIncludedDigits(String digits) {
         if (passwordRules == null) {
             setUp();
         }
-        passwordRules.setIncludedDigits(digits);
+        
+        List<Integer> digitsList = Arrays.stream(digits.split(", ")).map(Integer::parseInt).toList();
+        
+        passwordRules.setIncludedDigits(digitsList);
     }
 
-    public void setIncludedSymbols(List<Character> symbols) {
+    public void setExcludedDigits(String digits) {
         if (passwordRules == null) {
             setUp();
         }
-        passwordRules.setIncludedSymbols(symbols);
+
+        List<Integer> digitsList = Arrays.stream(digits.split(", ")).map(Integer::parseInt).toList();
+
+
+        passwordRules.setExcludedDigits(digitsList);
+    }
+
+    public void setIncludedSymbols(String symbols) {
+        if (passwordRules == null) {
+            setUp();
+        }
+        
+        List<Character> symbolsList = symbols.replace(", ", "").chars()
+                                          .mapToObj(c -> (char) c)
+                                          .toList();
+        
+        passwordRules.setIncludedSymbols(symbolsList);
+    }
+
+    public void setExcludedSymbols(String symbols) {
+        if (passwordRules == null) {
+            setUp();
+        }
+
+        List<Character> symbolsList = symbols.replace(", ", "").chars()
+                .mapToObj(c -> (char) c)
+                .toList();
+        
+        passwordRules.setExcludedSymbols(symbolsList);
+    }
+
+    public void setIncludedLetters(String letters) {
+        if (passwordRules == null) {
+            setUp();
+        }
+
+        List<Character> lettersList = letters.replace(", ", "").chars()
+                .mapToObj(c -> (char) c)
+                .toList();
+        passwordRules.setIncludedLetters(lettersList);
+    }
+
+    public void setExcludedLetters(String letters) {
+        if (passwordRules == null) {
+            setUp();
+        }
+
+        List<Character> lettersList = letters.replace(", ", "").chars()
+                .mapToObj(c -> (char) c)
+                .toList();
+        passwordRules.setExcludedLetters(lettersList);
     }
 
     public List<Integer> getIncludedDigits() {
-        return passwordRules.getIncludedDigits();
-    }
-
-    public List<Character> getIncludedSymbols() {
-        return passwordRules.getIncludedSymbols();
-    }
-
-    public void setExcludedDigits(List<Integer> digits) {
-        if (passwordRules == null) {
-            setUp();
-        }
-        passwordRules.setExcludedDigits(digits);
-    }
-
-    public void setExcludedSymbols(List<Character> symbols) {
-        if (passwordRules == null) {
-            setUp();
-        }
-        passwordRules.setExcludedSymbols(symbols);
+        return passwordRules != null ? passwordRules.getIncludedDigits() : new ArrayList<>();
     }
 
     public List<Integer> getExcludedDigits() {
-        return passwordRules.getExcludedDigits();
+        return passwordRules != null ? passwordRules.getExcludedDigits() : new ArrayList<>();
+    }
+
+    public List<Character> getIncludedSymbols() {
+        return passwordRules != null ? passwordRules.getIncludedSymbols() : new ArrayList<>();
     }
 
     public List<Character> getExcludedSymbols() {
-        return passwordRules.getExcludedSymbols();
+        return passwordRules != null ? passwordRules.getExcludedSymbols() : new ArrayList<>();
+    }
+
+    public List<Character> getIncludedLetters() {
+        return passwordRules != null ? passwordRules.getIncludedLetters() : new ArrayList<>();
+    }
+
+    public List<Character> getExcludedLetters() {
+        return passwordRules != null ? passwordRules.getExcludedLetters() : new ArrayList<>();
     }
 
     public boolean isValidConfiguration() {
-        return passwordRules.getMinLength() <= passwordRules.getMaxLength() &&
-               passwordRules.getMinNumberOfDigits() >= 0 &&
-               passwordRules.getMinNumberOfSymbols() >= 0;
-    }
-
-    public void loadFromProperties(String filename) {
-        if (propertiesLoader == null) {
-            setUp();
+        if (passwordRules == null) {
+            return false;
         }
-        propertiesLoader.load(filename);
+        return passwordRules.getMinLength() <= passwordRules.getMaxLength() &&
+               passwordRules.getMinLength() > 0 &&
+               passwordRules.getMaxLength() > 0 &&
+               passwordRules.getMinNumberOfDigits() <= passwordRules.getMaxNumberOfDigits() &&
+               passwordRules.getMinNumberOfSymbols() <= passwordRules.getMaxNumberOfSymbols() &&
+               passwordRules.getMinNumberOfDigits() >= 0 &&
+               passwordRules.getMaxNumberOfDigits() >= 0 &&
+               passwordRules.getMinNumberOfSymbols() >= 0 &&
+               passwordRules.getMaxNumberOfSymbols() >= 0;
     }
 
-    public boolean hasProperties() {
-        return propertiesLoader != null && propertiesLoader.getProperties() != null && 
-               !propertiesLoader.getProperties().isEmpty();
+    public boolean lengthIsValid(long minLength, long maxLength) {
+        return minLength <= maxLength && minLength > 0 && maxLength > 0;
+    }
+
+    public boolean digitsRangeIsValid(long minDigits, long maxDigits) {
+        return minDigits <= maxDigits && minDigits >= 0 && maxDigits >= 0;
+    }
+
+    public boolean symbolsRangeIsValid(long minSymbols, long maxSymbols) {
+        return minSymbols <= maxSymbols && minSymbols >= 0 && maxSymbols >= 0;
+    }
+
+    public boolean canContainIncludedDigits(List<Integer> included) {
+        return included != null && included.stream().allMatch(digit -> digit >= 0 && digit <= 9);
+    }
+
+    public boolean canExcludeDigits(List<Integer> excluded) {
+        return excluded != null && excluded.stream().allMatch(digit -> digit >= 0 && digit <= 9);
+    }
+
+    public boolean hasConflictingDigitRules(List<Integer> included, List<Integer> excluded) {
+        if (included == null || excluded == null) {
+            return false;
+        }
+        return included.stream().anyMatch(excluded::contains);
+    }
+
+    public boolean canContainIncludedSymbols(List<Character> included) {
+        return included != null;
+    }
+
+    public boolean canExcludeSymbols(List<Character> excluded) {
+        return excluded != null;
+    }
+
+    public boolean hasConflictingSymbolRules(List<Character> included, List<Character> excluded) {
+        if (included == null || excluded == null) {
+            return false;
+        }
+        return included.stream().anyMatch(excluded::contains);
+    }
+
+    public boolean canContainIncludedLetters(List<Character> included) {
+        return included != null;
+    }
+
+    public boolean canExcludeLetters(List<Character> excluded) {
+        return excluded != null;
+    }
+
+    public boolean hasConflictingLetterRules(List<Character> included, List<Character> excluded) {
+        if (included == null || excluded == null) {
+            return false;
+        }
+        return included.stream().anyMatch(excluded::contains);
+    }
+
+    public boolean rulesAreMathematicallyPossible() {
+        if (passwordRules == null) {
+            return false;
+        }
+        
+        long minRequiredLength = passwordRules.getMinNumberOfDigits() + 
+                               passwordRules.getMinNumberOfSymbols() +
+                               passwordRules.getIncludedDigits().size() +
+                               passwordRules.getIncludedSymbols().size() +
+                               passwordRules.getIncludedLetters().size();
+                               
+        return minRequiredLength <= passwordRules.getMaxLength();
+    }
+
+    public String getValidationResult() {
+        if (passwordRules == null) {
+            return "Invalid: Rules not initialized";
+        }
+        
+        if (!isValidConfiguration()) {
+            return "Invalid configuration";
+        }
+        
+        if (!rulesAreMathematicallyPossible()) {
+            return "Mathematically impossible";
+        }
+        
+        return "Valid";
+    }
+
+    public boolean areRulesValid() {
+        return isValidConfiguration();
+    }
+
+    public int getIncludedDigitsSize() {
+        return passwordRules != null ? passwordRules.getIncludedDigits().size() : 0;
+    }
+
+    public int getIncludedSymbolsSize() {
+        return passwordRules != null ? passwordRules.getIncludedSymbols().size() : 0;
+    }
+
+    public int getIncludedLettersSize() {
+        return passwordRules != null ? passwordRules.getIncludedLetters().size() : 0;
+    }
+
+    public int getExcludedDigitsSize() {
+        return passwordRules != null ? passwordRules.getExcludedDigits().size() : 0;
+    }
+
+    public int getExcludedSymbolsSize() {
+        return passwordRules != null ? passwordRules.getExcludedSymbols().size() : 0;
+    }
+
+    public int getExcludedLettersSize() {
+        return passwordRules != null ? passwordRules.getExcludedLetters().size() : 0;
+    }
+
+    public boolean hasConflictingRules() {
+        if (passwordRules == null) {
+            return false;
+        }
+        
+        return hasConflictingDigitRules(passwordRules.getIncludedDigits(), passwordRules.getExcludedDigits()) ||
+               hasConflictingSymbolRules(passwordRules.getIncludedSymbols(), passwordRules.getExcludedSymbols()) ||
+               hasConflictingLetterRules(passwordRules.getIncludedLetters(), passwordRules.getExcludedLetters());
+    }
+
+    public String validateRulesConfiguration() {
+        if (passwordRules == null) {
+            return "Rules not initialized";
+        }
+        
+        if (hasConflictingRules()) {
+            return "Conflicting rules detected";
+        }
+        
+        if (!rulesAreMathematicallyPossible()) {
+            return "Rules are mathematically impossible";
+        }
+        
+        if (!isValidConfiguration()) {
+            return "Invalid configuration";
+        }
+        
+        return "Valid configuration";
+    }
+
+    public boolean canSatisfyMinimumRequirements() {
+        if (passwordRules == null) {
+            return false;
+        }
+        
+        long requiredCharacters = passwordRules.getMinNumberOfDigits() + 
+                                passwordRules.getMinNumberOfSymbols() +
+                                passwordRules.getIncludedDigits().size() +
+                                passwordRules.getIncludedSymbols().size() +
+                                passwordRules.getIncludedLetters().size();
+                                
+        return requiredCharacters <= passwordRules.getMaxLength();
+    }
+
+    public boolean hasValidBounds() {
+        if (passwordRules == null) {
+            return false;
+        }
+        
+        return lengthIsValid(passwordRules.getMinLength(), passwordRules.getMaxLength()) &&
+               digitsRangeIsValid(passwordRules.getMinNumberOfDigits(), passwordRules.getMaxNumberOfDigits()) &&
+               symbolsRangeIsValid(passwordRules.getMinNumberOfSymbols(), passwordRules.getMaxNumberOfSymbols());
+    }
+
+    public String testComplexConfiguration(long minLen, long maxLen, long minDigits, long maxDigits, 
+                                         long minSymbols, long maxSymbols,
+                                         List<Integer> includedDigits, List<Integer> excludedDigits,
+                                         List<Character> includedSymbols, List<Character> excludedSymbols,
+                                         List<Character> includedLetters, List<Character> excludedLetters) {
+        
+        setUp();
+        
+        passwordRules.setMinLength(minLen);
+        passwordRules.setMaxLength(maxLen);
+        passwordRules.setMinNumberOfDigits(minDigits);
+        passwordRules.setMaxNumberOfDigits(maxDigits);
+        passwordRules.setMinNumberOfSymbols(minSymbols);
+        passwordRules.setMaxNumberOfSymbols(maxSymbols);
+        
+        if (includedDigits != null) {
+            passwordRules.setIncludedDigits(includedDigits);
+        }
+        if (excludedDigits != null) {
+            passwordRules.setExcludedDigits(excludedDigits);
+        }
+        if (includedSymbols != null) {
+            passwordRules.setIncludedSymbols(includedSymbols);
+        }
+        if (excludedSymbols != null) {
+            passwordRules.setExcludedSymbols(excludedSymbols);
+        }
+        if (includedLetters != null) {
+            passwordRules.setIncludedLetters(includedLetters);
+        }
+        if (excludedLetters != null) {
+            passwordRules.setExcludedLetters(excludedLetters);
+        }
+        
+        return validateRulesConfiguration();
     }
 }

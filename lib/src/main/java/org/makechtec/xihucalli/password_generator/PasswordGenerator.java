@@ -96,6 +96,12 @@ public class PasswordGenerator {
             return false;
         }
 
+        // Para longitudes muy cortas (1-3 caracteres), relajar la restricción de MIN_AVAILABLE_CHARACTERS
+        // si no hay requisitos mínimos específicos de dígitos o símbolos
+        if (rules.getMaxLength() <= 3 && rules.getMinNumberOfDigits() == 0 && rules.getMinNumberOfSymbols() == 0) {
+            return !availableDigits.isEmpty() || !availableSymbols.isEmpty() || !availableLetters.isEmpty();
+        }
+
         return (availableDigits.size() + availableSymbols.size() + availableLetters.size()) >= MIN_AVAILABLE_CHARACTERS;
     }
 
