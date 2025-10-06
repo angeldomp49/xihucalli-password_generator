@@ -1,38 +1,35 @@
-# Matriz de Cobertura de Pruebas
+# Matriz de cobertura de pruebas
 
-Este documento proporciona una matriz integral de cobertura de pruebas para la Biblioteca Generador de Contraseñas, documentando todos los escenarios de prueba, resultados esperados y criterios de validación.
+Este documento proporciona una matriz de cobertura de pruebas para la biblioteca Password Generator, documentando todos los escenarios, resultados esperados y criterios de validación.
 
-## Tabla de Contenidos
+## Tabla de contenidos
 
-- [Categorías de Pruebas](#categorías-de-pruebas)
-- [Matriz de Pruebas Funcionales](#matriz-de-pruebas-funcionales)
-- [Matriz de Pruebas de Seguridad](#matriz-de-pruebas-de-seguridad)
-- [Matriz de Pruebas de Manejo de Errores](#matriz-de-pruebas-de-manejo-de-errores)
-- [Matriz de Pruebas de Rendimiento](#matriz-de-pruebas-de-rendimiento)
+- Categorías de pruebas
+- Matriz funcional
+- Matriz de seguridad
+- Matriz de manejo de errores
+- Matriz de rendimiento
+- Matriz de casos límite
 
-## Categorías de Pruebas
+## Categorías de pruebas
 
-### Sistema de Clasificación de Pruebas
+| Categoría      | Descripción                                 | Prioridad |
+|---------------|---------------------------------------------|-----------|
+| Funcional     | Funcionalidad principal de generación        | Alta      |
+| Seguridad     | Seguridad criptográfica y aleatoriedad       | Crítica   |
+| Validación    | Validación de entrada y reglas               | Alta      |
+| Manejo de errores | Escenarios de excepción y recuperación   | Media     |
+| Rendimiento   | Velocidad y uso de recursos                  | Media     |
+| Casos límite  | Condiciones de frontera y casos extremos     | Alta      |
 
-| Categoría | Descripción | Prioridad |
-|-----------|-------------|-----------|
-| **Funcional** | Funcionalidad central de generación de contraseñas | Alta |
-| **Seguridad** | Seguridad criptográfica y aleatoriedad | Crítica |
-| **Validación** | Validación de entrada y verificación de reglas | Alta |
-| **Manejo de Errores** | Escenarios de excepción y recuperación | Media |
-| **Rendimiento** | Velocidad y uso de recursos | Media |
-| **Casos Límite** | Condiciones de frontera y casos extremos | Alta |
+## Matriz funcional
 
-## Matriz de Pruebas Funcionales
-
-### Generación Básica de Contraseñas
-
-| ID Prueba | Escenario | Reglas de Entrada | Salida Esperada | Criterios de Validación |
-|-----------|-----------|-------------------|-----------------|------------------------|
-| FT-001 | Contraseña longitud mínima | `{"length":{"min":1,"max":1}}` | 1 carácter | Longitud = 1 |
-| FT-002 | Contraseña longitud máxima | `{"length":{"min":100,"max":100}}` | 100 caracteres | Longitud = 100 |
-| FT-003 | Rango de longitud variable | `{"length":{"min":8,"max":12}}` | 8-12 caracteres | 8 ≤ longitud ≤ 12 |
-| FT-004 | Comportamiento longitud por defecto | `{}` | Longitud variable | Longitud ≥ 1 |
+| ID   | Escenario                  | Reglas de entrada | Salida esperada | Criterio de validación |
+|------|----------------------------|-------------------|-----------------|-----------------------|
+| FT-001 | Contraseña de longitud mínima | {"length":{"min":1,"max":1}} | 1 carácter | Longitud = 1 |
+| FT-002 | Contraseña de longitud máxima | {"length":{"min":100,"max":100}} | 100 caracteres | Longitud = 100 |
+| FT-003 | Rango de longitud variable | {"length":{"min":8,"max":12}} | 8-12 caracteres | 8 ≤ longitud ≤ 12 |
+| FT-004 | Comportamiento por defecto | {} | Longitud variable | Longitud ≥ 1 |
 
 ### Requisitos de Tipos de Caracteres
 

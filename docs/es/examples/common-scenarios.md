@@ -1,20 +1,20 @@
-# Escenarios Comunes - Ejemplos de Generación de Contraseñas
+# Escenarios comunes - Ejemplos de generación de contraseñas
 
-Esta guía proporciona ejemplos prácticos para escenarios comunes de generación de contraseñas, demostrando cómo configurar la Biblioteca Generador de Contraseñas para diferentes requisitos empresariales.
+Esta guía proporciona ejemplos prácticos para escenarios comunes de generación de contraseñas, mostrando cómo configurar la biblioteca para diferentes requisitos empresariales.
 
-## Tabla de Contenidos
+## Tabla de contenidos
 
-- [Tipos Básicos de Contraseñas](#tipos-básicos-de-contraseñas)
-- [Ejemplos por Nivel de Seguridad](#ejemplos-por-nivel-de-seguridad)
-- [Requisitos Específicos por Industria](#requisitos-específicos-por-industria)
-- [Casos de Uso Especiales](#casos-de-uso-especiales)
-- [Patrones de Integración](#patrones-de-integración)
+- Tipos básicos de contraseñas
+- Ejemplos de niveles de seguridad
+- Requisitos específicos de la industria
+- Casos de uso especiales
+- Patrones de integración
 
-## Tipos Básicos de Contraseñas
+## Tipos básicos de contraseñas
 
-### Contraseña Estándar de Usuario
+### Contraseña estándar de usuario
 
-Una contraseña típica para sistemas de registro de usuarios con seguridad y usabilidad equilibradas.
+Ejemplo de contraseña para sistemas de registro de usuarios con equilibrio entre seguridad y usabilidad.
 
 ```java
 PasswordGenerator generator = new PasswordGenerator(
@@ -23,7 +23,7 @@ PasswordGenerator generator = new PasswordGenerator(
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 );
 
-String userPasswordRules = """
+String reglasUsuario = """
 {
   "length": {"min": 8, "max": 16},
   "digits": {"min": 1, "max": 4},
@@ -32,16 +32,16 @@ String userPasswordRules = """
 }
 """;
 
-String password = generator.generatePassword(userPasswordRules);
+String password = generator.generatePassword(reglasUsuario);
 // Ejemplo de salida: "Kf7@mN2p"
 ```
 
-### Contraseña Temporal
+### Contraseña temporal
 
-Contraseñas de corta duración para flujos de restablecimiento de contraseña o acceso temporal.
+Contraseñas de corta duración para flujos de restablecimiento o acceso temporal.
 
 ```java
-String tempPasswordRules = """
+String reglasTemporales = """
 {
   "length": {"min": 12, "max": 12},
   "digits": {"min": 3, "max": 3},
@@ -50,7 +50,7 @@ String tempPasswordRules = """
 }
 """;
 
-String tempPassword = generator.generatePassword(tempPasswordRules);
+String password = generator.generatePassword(reglasTemporales);
 // Ejemplo de salida: "aB3@xY9#mNpQ"
 ```
 

@@ -1,50 +1,47 @@
-# Preguntas Frecuentes (FAQ)
+# Preguntas frecuentes (FAQ)
 
-Este documento responde preguntas comunes sobre la Biblioteca Generador de Contraseñas, proporcionando soluciones prácticas y explicaciones basadas en escenarios de uso del mundo real.
+Este documento responde preguntas comunes sobre la biblioteca Password Generator, proporcionando soluciones prácticas y explicaciones basadas en escenarios reales de uso.
 
-## Tabla de Contenidos
+## Tabla de contenidos
 
-- [Preguntas Generales](#preguntas-generales)
-- [Preguntas de Seguridad](#preguntas-de-seguridad)
-- [Preguntas de Configuración](#preguntas-de-configuración)
-- [Preguntas de Manejo de Errores](#preguntas-de-manejo-de-errores)
-- [Preguntas de Rendimiento](#preguntas-de-rendimiento)
-- [Preguntas de Integración](#preguntas-de-integración)
+- Preguntas generales
+- Preguntas de seguridad
+- Preguntas de configuración
+- Preguntas de manejo de errores
+- Preguntas de rendimiento
+- Preguntas de integración
 
-## Preguntas Generales
+## Preguntas generales
 
-### P: ¿Qué hace diferente a este generador de contraseñas de otros?
+### ¿Qué hace diferente a este generador de contraseñas?
 
-**R**: Nuestra Biblioteca Generador de Contraseñas ofrece varias ventajas únicas:
+**R:** Ofrece ventajas únicas:
+- Validación matemática de reglas
+- Seguridad criptográfica
+- Características empresariales
+- Configuración flexible en JSON
 
-- **Validación de Viabilidad Matemática**: A diferencia de los generadores básicos, validamos que tus reglas sean matemáticamente posibles antes de intentar la generación
-- **Seguridad Criptográfica**: Usa `SecureRandom` e implementa mezcla Fisher-Yates segura
-- **Características Empresariales**: Manejo integral de errores, registro detallado y validación exhaustiva
-- **Configuración JSON**: Especificación de reglas flexible y declarativa en lugar de configuración procedimental
+### ¿Cuáles son los requisitos mínimos del sistema?
 
-### P: ¿Cuáles son los requisitos mínimos del sistema?
+**R:**
+- Java 17 o superior
+- Uso mínimo de memoria
+- Dependencia de Jackson para JSON
+- Compatible con Gradle o Maven
 
-**R**: 
-- **Versión de Java**: Java 17 o superior
-- **Memoria**: Uso mínimo de heap (< 10MB para uso típico)
-- **Dependencias**: Jackson para procesamiento JSON (incluido automáticamente)
-- **Sistema de Construcción**: Gradle o Maven soportados
+### ¿Cómo empezar con la generación básica?
 
-### P: ¿Cómo empiezo con la generación básica de contraseñas?
-
-**R**: Aquí está el ejemplo más simple posible:
-
+**R:** Ejemplo:
 ```java
 PasswordGenerator generator = new PasswordGenerator(
     "0123456789",
     "!@#$%^&*()",
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 );
-
-String password = generator.generatePassword("{}"); // Usa valores por defecto
+String password = generator.generatePassword("{}");
 ```
 
-## Preguntas de Seguridad
+## Preguntas de seguridad
 
 ### P: ¿Cómo asegura la biblioteca la seguridad criptográfica?
 
@@ -82,7 +79,7 @@ String pciRules = """
 """;
 ```
 
-## Preguntas de Configuración
+## Preguntas de configuración
 
 ### P: ¿Por qué mi generación falla con error "matemáticamente imposible"?
 
@@ -137,7 +134,7 @@ PasswordGenerator unicodeGenerator = new PasswordGenerator(
 );
 ```
 
-## Preguntas de Manejo de Errores
+## Preguntas de manejo de errores
 
 ### P: ¿Cómo debo manejar SecurityException en código de producción?
 
@@ -192,7 +189,7 @@ public String generatePasswordSafely(String rules) {
 }
 ```
 
-## Preguntas de Rendimiento
+## Preguntas de rendimiento
 
 ### P: ¿Qué tan rápida es la generación de contraseñas?
 
@@ -219,7 +216,7 @@ CompletableFuture<String> future2 = CompletableFuture.supplyAsync(
 );
 ```
 
-## Preguntas de Integración
+## Preguntas de integración
 
 ### P: ¿Cómo integro con Spring Boot?
 
@@ -281,8 +278,8 @@ password:
 
 ---
 
-**Documentación Relacionada**:
+**Documentación relacionada**:
 - [README](README.md) - Guía de inicio
-- [Guía de Lógica de Negocio](business-logic/password-generation-rules.md) - Detalles del algoritmo
-- [Guía de Manejo de Errores](error-handling/security-exceptions.md) - Gestión de excepciones
+- [Guía de lógica de negocio](business-logic/password-generation-rules.md) - Detalles del algoritmo
+- [Guía de manejo de errores](error-handling/security-exceptions.md) - Gestión de excepciones
 - [Ejemplos](examples/common-scenarios.md) - Casos de uso prácticos

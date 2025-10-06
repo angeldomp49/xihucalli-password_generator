@@ -1,49 +1,48 @@
-# Excepciones de Seguridad - Guía de Manejo de Errores
+# Guía de manejo de excepciones de seguridad
 
-Esta guía proporciona cobertura integral de todos los escenarios de error en la Biblioteca Generador de Contraseñas, incluyendo explicaciones detalladas, causas y estrategias de resolución.
+Esta guía cubre todos los escenarios de error en la biblioteca Password Generator, incluyendo explicaciones detalladas, causas y estrategias de resolución.
 
-## Tabla de Contenidos
+## Tabla de contenidos
 
-- [Resumen de Excepciones](#resumen-de-excepciones)
-- [Errores de Validación de Reglas](#errores-de-validación-de-reglas)
-- [Errores de Imposibilidad Matemática](#errores-de-imposibilidad-matemática)
-- [Errores de Fallo de Generación](#errores-de-fallo-de-generación)
-- [Errores de Procesamiento JSON](#errores-de-procesamiento-json)
-- [Mejores Prácticas de Manejo de Errores](#mejores-prácticas-de-manejo-de-errores)
+- Descripción general de excepciones
+- Errores de validación de reglas
+- Errores de imposibilidad matemática
+- Errores de fallo de generación
+- Errores de procesamiento JSON
+- Errores de validación de constructores
+- Buenas prácticas de manejo de errores
 
-## Resumen de Excepciones
+## Descripción general de excepciones
 
-La Biblioteca Generador de Contraseñas utiliza `SecurityException` para todas las condiciones de error para mantener consistencia y manejo de errores enfocado en seguridad. Todas las excepciones incluyen mensajes descriptivos para ayudar en la depuración y resolución.
+La biblioteca utiliza `SecurityException` para todas las condiciones de error, manteniendo la consistencia y el enfoque en la seguridad. Todas las excepciones incluyen mensajes descriptivos para facilitar la depuración y resolución.
 
-### Patrón Común de Excepción
+### Patrón común de excepción
 
 ```java
 try {
     String password = generator.generatePassword(rules);
 } catch (SecurityException e) {
-    // Analizar mensaje de error para manejo específico
-    String message = e.getMessage();
-    
-    if (message.contains("mathematically impossible")) {
+    String mensaje = e.getMessage();
+    if (mensaje.contains("matemáticamente imposible")) {
         // Manejar reglas imposibles
-    } else if (message.contains("Invalid password rules")) {
+    } else if (mensaje.contains("Reglas de contraseña inválidas")) {
         // Manejar errores de validación
-    } else if (message.contains("maximum attempts")) {
+    } else if (mensaje.contains("máximos intentos")) {
         // Manejar fallos de generación
     }
 }
 ```
 
-## Errores de Validación de Reglas
+## Errores de validación de reglas
 
-### Configuración de Longitud Inválida
+### Configuración de longitud inválida
 
-**Mensaje de Error**: `"Configuración de reglas de contraseña inválida"`
+**Mensaje de error**: "Configuración de reglas de contraseña inválida"
 
 **Escenarios**:
-1. Longitud mínima mayor que longitud máxima
+1. Longitud mínima mayor que la máxima
 2. Valores de longitud cero o negativos
-3. Requisitos mínimos que exceden restricciones máximas
+3. Requisitos mínimos que exceden las restricciones máximas
 
 **Ejemplos**:
 
@@ -255,6 +254,41 @@ public class JsonValidator {
 }
 ```
 
+## Errores de Validación de Constructores
+
+### Parámetros de Constructor Inválidos
+
+**Mensaje de Error**: `"Parámetros de constructor de regla de contraseña inválidos"`
+
+**Causa**: Los argumentos proporcionados a un constructor de regla no son válidos, como tipos incorrectos o valores fuera de rango.
+
+**Ejemplo**:
+
+```java
+// Intento de crear una regla con longitud negativa
+PasswordRule invalidRule = new PasswordRule(-1, 10);
+```
+
+**Resolución**:
+
+```java
+public class PasswordRule {
+    private final int minLength;
+    private final int maxLength;
+
+    public PasswordRule(int minLength, int maxLength) {
+        if (minLength < 0 || maxLength < 0) {
+            throw new IllegalArgumentException("La longitud mínima y máxima deben ser mayores que cero.");
+        }
+        if (minLength > maxLength) {
+            throw new IllegalArgumentException("La longitud mínima no puede ser mayor que la longitud máxima.");
+        }
+        this.minLength = minLength;
+        this.maxLength = maxLength;
+    }
+}
+```
+
 ## Mejores Prácticas de Manejo de Errores
 
 ### Manejo Integral de Errores
@@ -277,12 +311,12 @@ public class RobustPasswordService {
     private GenerationResult handleSecurityException(SecurityException e, String originalRules) {
         String message = e.getMessage();
         
-        if (message.contains("mathematically impossible")) {
+        if (message.contains("matemáticamente imposible")) {
             return GenerationResult.failure("REGLAS_IMPOSIBLES", 
                 "Las reglas de contraseña son matemáticamente imposibles. Por favor ajuste los requisitos mínimos o aumente la longitud máxima.", 
                 suggestRuleAdjustments(originalRules));
                 
-        } else if (message.contains("Invalid password rules")) {
+        } else if (message.contains("Reglas de contraseña inválidas")) {
             return GenerationResult.failure("REGLAS_INVALIDAS", 
                 "Las reglas de contraseña contienen configuraciones inválidas. Por favor verifique valores min/max y tipos de datos.", 
                 validateAndSuggestFixes(originalRules));

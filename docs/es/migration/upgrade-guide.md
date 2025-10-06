@@ -1,50 +1,51 @@
-# Guía de Migración y Actualización
+# Guía de migración y actualización
 
-Esta guía proporciona instrucciones detalladas para migrar entre versiones de la Biblioteca Generador de Contraseñas, incluyendo cambios disruptivos, nuevas características y estrategias de actualización recomendadas.
+Esta guía proporciona instrucciones detalladas para migrar entre versiones de la biblioteca Password Generator, incluyendo cambios importantes, nuevas funcionalidades y estrategias recomendadas de actualización.
 
-## Tabla de Contenidos
+## Tabla de contenidos
 
-- [Historial de Versiones](#historial-de-versiones)
-- [Migración de 1.2.x a 1.3.0](#migración-de-12x-a-130)
-- [Cambios Disruptivos](#cambios-disruptivos)
-- [Nuevas Características](#nuevas-características)
-- [Estrategias de Actualización](#estrategias-de-actualización)
+- Historial de versiones
+- Migración de 1.2.x a 1.3.0
+- Cambios importantes
+- Nuevas funcionalidades
+- Funcionalidades obsoletas
+- Estrategias de actualización
 
-## Historial de Versiones
+## Historial de versiones
 
-| Versión | Fecha de Lanzamiento | Cambios Clave | Compatibilidad |
-|---------|---------------------|---------------|----------------|
-| 1.3.0 | Diciembre 2024 | Validación de viabilidad matemática, soporte Unicode | Cambios disruptivos |
-| 1.2.x | Octubre 2024 | Optimizaciones de rendimiento | Compatible hacia atrás |
-| 1.1.x | Agosto 2024 | Lanzamiento estable inicial | N/A |
+| Versión | Fecha de lanzamiento | Cambios clave | Compatibilidad |
+|---------|---------------------|--------------|---------------|
+| 1.3.0   | Diciembre 2024      | Validación matemática, soporte Unicode | Cambios importantes |
+| 1.2.x   | Octubre 2024        | Optimización de rendimiento | Compatible |
+| 1.1.x   | Agosto 2024         | Versión estable inicial | N/A |
 
 ## Migración de 1.2.x a 1.3.0
 
 ### Resumen
 
-La versión 1.3.0 introduce mejoras significativas en validación de reglas y seguridad, pero incluye cambios disruptivos que requieren actualizaciones de código.
+La versión 1.3.0 introduce mejoras significativas en la validación de reglas y seguridad, pero incluye cambios importantes que requieren actualización de código.
 
-### Cambios Críticos
+### Cambios críticos
 
-#### 1. Validación de Reglas Mejorada
+#### 1. Validación mejorada de reglas
 
-**Comportamiento Anterior (1.2.x)**:
+**Comportamiento anterior (1.2.x):**
 ```java
-// Esto intentaría generación y potencialmente fallaría silenciosamente o después de muchos intentos
-String impossibleRules = """
+// Intento de generación que puede fallar silenciosamente
+String reglasImposibles = """
 {
   "length": {"max": 5},
   "digits": {"min": 4},
   "symbols": {"min": 3}
 }
 """;
-generator.generatePassword(impossibleRules); // Fallaría impredeciblemente
+generator.generatePassword(reglasImposibles); // Puede fallar de forma impredecible
 ```
 
-**Nuevo Comportamiento (1.3.0)**:
+**Nuevo comportamiento (1.3.0):**
 ```java
-// Ahora lanza SecurityException inmediatamente con mensaje de error claro
-String impossibleRules = """
+// Ahora lanza SecurityException inmediatamente con mensaje claro
+String reglasImposibles = """
 {
   "length": {"max": 5},
   "digits": {"min": 4},
@@ -157,7 +158,7 @@ public class RuleMigrationValidator {
 }
 ```
 
-## Cambios Disruptivos
+## Cambios importantes
 
 ### Cambios en API
 
@@ -167,7 +168,7 @@ public class RuleMigrationValidator {
 | Mensajes de Error | Mensajes genéricos | Mensajes específicos y accionables | Mejor manejo de errores posible |
 | Conjuntos de Caracteres | Sin requisito de diversidad mínima | ≥4 caracteres para contraseñas largas | Puede requerir conjuntos de caracteres más grandes |
 
-## Nuevas Características
+## Nuevas funcionalidades
 
 ### 1. Validación de Viabilidad Matemática
 
@@ -199,7 +200,7 @@ PasswordGenerator unicodeGenerator = new PasswordGenerator(
 - Gestión más eficiente de grupos de caracteres
 - Patrones de uso de memoria mejorados
 
-## Estrategias de Actualización
+## Estrategias de actualización
 
 ### Estrategia 1: Actualización Inmediata (Recomendada)
 

@@ -1,48 +1,48 @@
-# Biblioteca Generador de Contraseñas
+# Biblioteca generadora de contraseñas
 
-Una biblioteca Java segura para generar contraseñas con reglas personalizables a través de configuración JSON. Esta biblioteca proporciona generación de contraseñas criptográficamente segura con validación exhaustiva y configuración flexible basada en reglas.
+Una biblioteca Java segura para generar contraseñas con reglas personalizables mediante configuración JSON. Proporciona generación criptográficamente segura, validación extensa y configuración flexible basada en reglas.
 
-## Tabla de Contenidos
+## Tabla de contenidos
 
-- [Introducción](#introducción)
-- [Instalación y Configuración](#instalación-y-configuración)
-- [Uso Básico](#uso-básico)
-- [Formato de Reglas JSON](#formato-de-reglas-json)
-- [Casos de Uso Avanzados](#casos-de-uso-avanzados)
-- [Manejo de Errores](#manejo-de-errores)
-- [Ejemplos](#ejemplos)
-- [Enlaces de Documentación](#enlaces-de-documentación)
+- Introducción
+- Instalación y configuración
+- Uso básico
+- Formato de reglas JSON
+- Casos de uso avanzados
+- Manejo de errores
+- Ejemplos
+- Enlaces de documentación
 
 ## Introducción
 
-La Biblioteca Generador de Contraseñas está diseñada para aplicaciones empresariales que requieren generación de contraseñas segura y compatible con control granular sobre la composición de contraseñas. A diferencia de los generadores de contraseñas aleatorios simples, esta biblioteca proporciona:
+Diseñada para aplicaciones empresariales que requieren generación segura y conforme de contraseñas con control detallado sobre la composición. Ofrece:
 
-- **Seguridad Criptográfica**: Utiliza `SecureRandom` y `ThreadLocalRandom` para generación criptográficamente segura
-- **Validación de Reglas**: La validación de viabilidad matemática previene configuraciones de reglas imposibles
-- **Configuración Flexible**: Las reglas basadas en JSON permiten requisitos de contraseña complejos
-- **Listo para Empresas**: Maneja casos extremos y proporciona informes de errores completos
+- Seguridad criptográfica
+- Validación matemática de reglas
+- Configuración flexible en JSON
+- Preparada para entornos empresariales
 
-### Casos de Uso Empresariales
+### Casos de uso empresariales
 
-- **Sistemas de Registro de Usuarios**: Generar contraseñas seguras que cumplan políticas organizacionales
-- **Generación de Claves API**: Crear tokens de autenticación fuertes con requisitos de caracteres específicos
-- **Sistemas de Contraseñas Temporales**: Generar contraseñas para flujos de restablecimiento de contraseña
-- **Requisitos de Cumplimiento**: Cumplir estándares de seguridad específicos (PCI-DSS, SOX, etc.)
+- Sistemas de registro de usuarios
+- Generación de claves API
+- Contraseñas temporales
+- Cumplimiento de normativas
 
-## Instalación y Configuración
+## Instalación y configuración
 
-### Requisitos del Sistema
+### Requisitos del sistema
 
 - Java 17 o superior
 - Gradle para construir el proyecto
 
-### Construcción del Proyecto
+### Compilación del proyecto
 
 ```bash
 ./gradlew build
 ```
 
-### Integración de la Biblioteca
+### Integración de la biblioteca
 
 ```java
 import org.makechtec.xihucalli.password_generator.PasswordGenerator;
@@ -55,9 +55,9 @@ PasswordGenerator generator = new PasswordGenerator(
 );
 ```
 
-## Uso Básico
+## Uso básico
 
-### Ejemplo Mínimo
+### Ejemplo mínimo
 
 ```java
 PasswordGenerator generator = new PasswordGenerator(
@@ -80,7 +80,7 @@ try {
 }
 ```
 
-### Manejo de Excepciones
+### Manejo de excepciones
 
 La biblioteca lanza `SecurityException` para varios escenarios:
 - Formato JSON inválido
@@ -98,7 +98,7 @@ try {
 }
 ```
 
-## Formato de Reglas JSON
+## Formato de reglas JSON
 
 Las reglas de generación de contraseñas se especifican usando un formato JSON estructurado:
 
@@ -127,9 +127,9 @@ Las reglas de generación de contraseñas se especifican usando un formato JSON 
 }
 ```
 
-### Propiedades de Reglas
+### Propiedades de reglas
 
-| Propiedad | Tipo | Descripción | Por Defecto |
+| Propiedad | Tipo | Descripción | Por defecto |
 |-----------|------|-------------|-------------|
 | `length.min` | entero | Longitud mínima de contraseña | 1 |
 | `length.max` | entero | Longitud máxima de contraseña | Long.MAX_VALUE |
@@ -144,9 +144,9 @@ Las reglas de generación de contraseñas se especifican usando un formato JSON 
 | `letters.include` | array de strings | Letras requeridas | [] |
 | `letters.exclude` | array de strings | Letras prohibidas | [] |
 
-## Casos de Uso Avanzados
+## Casos de uso avanzados
 
-### Política de Seguridad Corporativa
+### Política de seguridad corporativa
 
 ```java
 // Contraseña de alta seguridad para cuentas administrativas
@@ -160,7 +160,7 @@ String corporateRules = """
 """;
 ```
 
-### Generación de Claves API
+### Generación de claves API
 
 ```java
 // Generar claves API con requisitos de formato específicos
@@ -185,28 +185,28 @@ String pinRules = """
 """;
 ```
 
-## Manejo de Errores
+## Manejo de errores
 
 Escenarios comunes de error y sus soluciones:
 
-### Configuración de Reglas Inválida
+### Configuración de reglas inválida
 - **Error**: "Configuración de reglas de contraseña inválida"
 - **Causa**: minLength > maxLength, valores negativos
 - **Solución**: Validar restricciones de reglas antes de la generación
 
-### Reglas Matemáticamente Imposibles
+### Reglas matemáticamente imposibles
 - **Error**: "Las reglas de contraseña son matemáticamente imposibles de satisfacer"
 - **Causa**: minDigits + minSymbols > maxLength
 - **Solución**: Ajustar requisitos mínimos o aumentar longitud máxima
 
-### Fallo de Generación
+### Fallo de generación
 - **Error**: "No se puede generar contraseña que cumpla requisitos de seguridad después del máximo de intentos"
 - **Causa**: Reglas muy restrictivas causando fallos repetidos
 - **Solución**: Relajar algunas restricciones o verificar disponibilidad del conjunto de caracteres
 
 ## Ejemplos
 
-### Ejemplo 1: Contraseña Básica de 8 Caracteres
+### Ejemplo 1: Contraseña básica de 8 caracteres
 
 ```java
 PasswordGenerator generator = new PasswordGenerator(
@@ -227,7 +227,7 @@ String password = generator.generatePassword(rules);
 // Ejemplo de resultado: "aB3#xY9z"
 ```
 
-### Ejemplo 2: Contraseña de Alta Seguridad
+### Ejemplo 2: Contraseña de alta seguridad
 
 ```java
 String highSecurityRules = """
@@ -246,7 +246,7 @@ String strongPassword = generator.generatePassword(highSecurityRules);
 // Ejemplo de resultado: "A7B#2C@9x$4mN5pQ"
 ```
 
-### Ejemplo 3: PIN Numérico
+### Ejemplo 3: PIN numérico
 
 ```java
 PasswordGenerator pinGenerator = new PasswordGenerator(
@@ -266,17 +266,17 @@ String pin = generator.generatePassword(pinRules);
 // Ejemplo de resultado: "4729"
 ```
 
-## Enlaces de Documentación
+## Enlaces de documentación
 
-- [Guía de Lógica de Negocio](business-logic/password-generation-rules.md)
-- [Escenarios Comunes](examples/common-scenarios.md)
-- [Guía de Manejo de Errores](error-handling/security-exceptions.md)
-- [Matriz de Cobertura de Pruebas](testing/test-coverage-matrix.md)
-- [Guía de Migración](migration/upgrade-guide.md)
-- [Preguntas Frecuentes](faq.md)
+- [Guía de lógica de negocio](business-logic/password-generation-rules.md)
+- [Escenarios comunes](examples/common-scenarios.md)
+- [Guía de manejo de errores](error-handling/security-exceptions.md)
+- [Matriz de cobertura de pruebas](testing/test-coverage-matrix.md)
+- [Guía de migración](migration/upgrade-guide.md)
+- [Preguntas frecuentes](faq.md)
 
 ---
 
 **Versión**: 1.3.0  
-**Última Actualización**: Diciembre 2024  
+**Última actualización**: Diciembre 2024  
 **Licencia**: [Información de licencia]
