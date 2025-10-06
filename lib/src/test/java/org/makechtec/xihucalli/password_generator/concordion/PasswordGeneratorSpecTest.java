@@ -1,17 +1,18 @@
-rpackage org.makechtec.xihucalli.password_generator.concordion;
+package org.makechtec.xihucalli.password_generator.concordion;
 
-import org.concordion.integration.junit.jupiter.ConcordionExtension;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.makechtec.xihucalli.password_generator.ApplicationPropertiesLoader;
 import org.makechtec.xihucalli.password_generator.PasswordGenerator;
-import org.junit.jupiter.api.BeforeEach;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
-import java.security.SecureRandom;
 
-@ExtendWith(ConcordionExtension.class)
+import static org.junit.jupiter.api.Assertions.*;
+
+@DisplayName("Password Generator Integration Tests")
 public class PasswordGeneratorSpecTest {
 
     private PasswordGenerator passwordGenerator;
@@ -33,6 +34,95 @@ public class PasswordGeneratorSpecTest {
         // Clear previous test data
         testResults.clear();
         generatedPasswords.clear();
+    }
+
+    @Test
+    @DisplayName("Escenario 1: Generar contraseña con longitud específica")
+    void testGeneratePasswordWithBasicRules() {
+        // Given
+        int minLength = 8;
+        int maxLength = 12;
+        int minDigits = 2;
+        int minSymbols = 1;
+        
+        // When
+        String password = generatePasswordWithBasicRules(minLength, maxLength, minDigits, minSymbols);
+        
+        // Then
+        assertTrue(isLengthValid(password, minLength, maxLength), "Password length should be valid");
+        assertTrue(hasMinDigits(password, minDigits), "Password should have minimum digits");
+        assertTrue(hasMinSymbols(password, minSymbols), "Password should have minimum symbols");
+        assertTrue(isNotEmpty(password), "Password should not be empty");
+    }
+
+    @Test
+    @DisplayName("Escenario 2: Contraseña con caracteres incluidos específicos")
+    void testGeneratePasswordWithIncludes() {
+        // Given
+        List<Integer> includedDigits = Arrays.asList(1, 2, 3);
+        List<Character> includedSymbols = Arrays.asList('@', '#');
+        
+        // When
+        String password = generatePasswordWithIncludes(includedDigits, includedSymbols);
+        
+        // Then
+        assertTrue(containsAllRequiredDigits(password, includedDigits), "Password should contain all required digits");
+        assertTrue(containsAllRequiredSymbols(password, includedSymbols), "Password should contain all required symbols");
+    }
+
+    @Test
+    @DisplayName("Escenario 3: Contraseña con exclusiones")
+    void testGeneratePasswordWithExcludes() {
+        // Given
+        List<Integer> excludedDigits = Arrays.asList(0, 1);
+        List<Character> excludedSymbols = Arrays.asList('!', '@');
+        
+        // When
+        String password = generatePasswordWithExcludes(excludedDigits, excludedSymbols);
+        
+        // Then
+        assertTrue(doesNotContainExcludedDigits(password, excludedDigits), "Password should not contain excluded digits");
+        assertTrue(doesNotContainExcludedSymbols(password, excludedSymbols), "Password should not contain excluded symbols");
+    }
+
+    @Test
+    @DisplayName("Escenario 4: Validación de límites extremos")
+    void testPasswordLengthLimits() {
+        // Test minimum length
+        String password1 = generatePasswordWithLength(1, 1);
+        assertEquals(1, getPasswordLength(password1), "Password should have exact length of 1");
+        
+        // Test medium length
+        String password2 = generatePasswordWithLength(4, 4);
+        assertEquals(4, getPasswordLength(password2), "Password should have exact length of 4");
+        
+        // Test maximum length
+        String password3 = generatePasswordWithLength(30, 30);
+        assertEquals(30, getPasswordLength(password3), "Password should have exact length of 30");
+    }
+
+    @Test
+    @DisplayName("Escenario 5: Manejo de errores")
+    void testErrorHandling() {
+        // Test null rules
+        tryGenerateWithNullRules();
+        assertTrue(throwsExceptionWithNullRules(), "Should throw exception with null rules");
+        
+        // Test impossible rules
+        tryGenerateWithImpossibleRules();
+        assertTrue(throwsExceptionWithImpossibleRules(), "Should throw exception with impossible rules");
+    }
+
+    @Test
+    @DisplayName("Escenario 6: Validación de seguridad")
+    void testSecurityValidation() {
+        // Generate multiple passwords to verify uniqueness
+        int numPasswords = 50;
+        int uniquePasswords = countUniquePasswords(numPasswords);
+        
+        // Should generate unique passwords (allowing for some statistical overlap)
+        assertTrue(uniquePasswords >= numPasswords * 0.9, 
+                "At least 90% of passwords should be unique for security");
     }
 
     public String generatePasswordWithBasicRules(int minLength, int maxLength, int minDigits, int minSymbols) {
@@ -78,7 +168,7 @@ public class PasswordGeneratorSpecTest {
             return false;
         }
         
-        String symbolsPattern = "[!@#$%^&*()_+\\-=\\[\\]{}|;:,.<>?]";
+        String symbolsPattern = "[!@#$%^&*()_+=-\\[\\]{};'`:\"./<>?~¢£¤¥¦§¨©«¬®°±´¶¸»×÷]";
         Pattern pattern = Pattern.compile(symbolsPattern);
         long symbolCount = password.chars()
                 .filter(ch -> pattern.matcher(String.valueOf((char) ch)).matches())

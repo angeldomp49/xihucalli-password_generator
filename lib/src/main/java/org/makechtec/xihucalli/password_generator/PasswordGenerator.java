@@ -112,8 +112,8 @@ public class PasswordGenerator {
 
     private void addMandatoryIncludedCharacters(List<Character> password, PasswordRulesInformation rules) {
         rules.getIncludedDigits().forEach(digit -> password.add(Character.forDigit(digit, 10)));
-        rules.getIncludedSymbols().forEach(password::add);
-        rules.getIncludedLetters().forEach(password::add);
+        password.addAll(rules.getIncludedSymbols());
+        password.addAll(rules.getIncludedLetters());
     }
 
     private void addMinimumRequiredCharacters(List<Character> password, PasswordRulesInformation rules, int targetLength) {

@@ -4,9 +4,13 @@
 [versions]
 commons-math3 = "3.6.1"
 guava = "33.4.5-jre"
-junit-jupiter = "5.12.1"
+concordion = "4.0.0"
+junit-jupiter = "5.10.1"
 
 [libraries]
 commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commons-math3" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
+concordion = { module = "org.concordion:concordion", version.ref = "concordion" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
+junit-platform = { module = "org.junit.platform:junit-platform-launcher" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-jupiter" }

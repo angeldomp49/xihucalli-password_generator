@@ -5,7 +5,6 @@
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/8.14.2/userguide/building_java_projects.html in the Gradle documentation.
  */
 
-import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 
 plugins {
@@ -28,23 +27,19 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junit.platform)
+    testRuntimeOnly(libs.junit.vintage.engine)
 
-    // Concordion dependencies for integration testing
-    testImplementation("org.concordion:concordion:4.1.0")
-    testImplementation("org.concordion:concordion-junit-jupiter:4.1.0")
+    // Testing dependencies
+    testImplementation(libs.concordion)
     
     // Mockito for minimal mocking
-    testImplementation("org.mockito:mockito-core:5.7.0")
-    testImplementation("org.mockito:mockito-junit-jupiter:5.7.0")
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
     
     // AssertJ for fluent assertions
-    testImplementation("org.assertj:assertj-core:3.24.2")
-    
-    // Spring Boot Test for integration testing
-    testImplementation("org.springframework.boot:spring-boot-starter-test:3.1.0")
+    testImplementation("org.assertj:assertj-core:3.25.1")
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api(libs.commons.math3)
@@ -65,6 +60,27 @@ java {
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
+
+    systemProperty("concordion.output.dir", "${project.layout.buildDirectory.get().asFile}/reports/concordion")
+
+    doFirst {
+        layout.buildDirectory.dir("reports/concordion").get().asFile.mkdirs()
+    }
+}
+
+// Custom task to run only Concordion tests
+tasks.register("concordionTest", Test::class) {
+    useJUnitPlatform {
+        includeTags("concordion")
+    }
+    
+    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile.absolutePath)
+    
+    doFirst {
+        layout.buildDirectory.dir("reports/concordion").get().asFile.mkdirs()
+    }
+    
+    finalizedBy("jacocoTestReport")
 }
 
 tasks.jacocoTestReport {

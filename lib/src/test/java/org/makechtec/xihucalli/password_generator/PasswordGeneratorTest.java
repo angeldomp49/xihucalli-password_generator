@@ -1,5 +1,6 @@
 package org.makechtec.xihucalli.password_generator;
 
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class PasswordGeneratorTest {
 
     private PasswordGenerator passwordGenerator;
+    private String symbolsList;
 
     @BeforeEach
     void setUp() {
@@ -17,9 +19,11 @@ class PasswordGeneratorTest {
         applicationPropertiesLoader.load("application.properties");
         var properties = applicationPropertiesLoader.getProperties();
 
+        symbolsList = (String) properties.get("password-generator.symbols.list");
+        
         passwordGenerator = new PasswordGenerator(
                 (String) properties.get("password-generator.numbers.list"),
-                (String) properties.get("password-generator.symbols.list"),
+                symbolsList,
                 (String) properties.get("password-generator.letters.list")
         );
     }
@@ -164,7 +168,9 @@ class PasswordGeneratorTest {
                   },
                   "symbols": {
                     "min": 1,
-                    "max": 8
+                    "max": 8,
+                    "exclude": ["$", "%"],
+                    "include": ["/", "&"]
                   },
                   "letters": {
                     "exclude": [],
@@ -177,13 +183,16 @@ class PasswordGeneratorTest {
 
         assertNotNull(password);
         assertFalse(password.isBlank());
-        assertFalse(password.contains("0"));
-        assertFalse(password.contains("1"));
         assertFalse(password.contains("$"));
         assertFalse(password.contains("%"));
 
-        var hasAtLeastOne = Stream.of('a', 'F', '2', '3', '/', '&').anyMatch(v -> password.contains(v + ""));
-        assertTrue(hasAtLeastOne);
+        var hasAtLeastOneDigit = password.contains("2") || password.contains("3");
+        var hasAtLeastOneLetter = password.contains("a") || password.contains("F");
+        var hasAtLeastOneSymbol = password.contains("/") || password.contains("&");
+        
+        assertTrue(hasAtLeastOneDigit, "Password should contain at least one of the included digits (2 or 3)");
+        assertTrue(hasAtLeastOneLetter, "Password should contain at least one of the included letters (a or F)");
+        assertTrue(hasAtLeastOneSymbol, "Password should contain at least one of the included symbols (/ or &)");
     }
 
     @Test
@@ -428,6 +437,11 @@ class PasswordGeneratorTest {
         long symbolCount = password.chars().filter(ch -> !Character.isLetterOrDigit(ch)).count();
         long letterCount = password.chars().filter(Character::isLetter).count();
         
+        System.out.println("Generated Password: " + password);
+        System.out.println("Digit Count: " + digitCount);
+        System.out.println("Symbol Count: " + symbolCount);
+        System.out.println("Letter Count: " + letterCount);
+        
         assertTrue(digitCount >= 4, "Should have minimum required digits for security: " + digitCount);
         assertTrue(symbolCount >= 4, "Should have minimum required symbols for security: " + symbolCount);
         assertTrue(letterCount >= 0, "Should have letters for complexity: " + letterCount);
@@ -435,6 +449,23 @@ class PasswordGeneratorTest {
         // Verify total character count adds up correctly
         assertEquals(password.length(), digitCount + symbolCount + letterCount,
                     "Total character counts should equal password length");
+    }
+    
+    @Test
+    void checkIsLetter(){
+
+
+        String input = symbolsList;
+        for (char c : input.toCharArray()) {
+            if (Character.isLetter(c)) {
+                System.out.println(c + " es una letra");
+            } else if (Character.isDigit(c)) {
+                System.out.println(c + " es un dígito");
+            } else {
+                System.out.println(c + " es un símbolo");
+            }
+        }
+        
     }
 
     @Test

@@ -1,20 +1,19 @@
 package org.makechtec.xihucalli.password_generator.concordion;
 
-import org.concordion.api.ConcordionRunner;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.makechtec.xihucalli.password_generator.ApplicationPropertiesLoader;
 import org.makechtec.xihucalli.password_generator.PasswordGenerator;
-import org.junit.jupiter.api.BeforeEach;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.io.IOException;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(ConcordionRunner.class)
-public class IntegrationSpec {
+@DisplayName("Spring Boot Integration Tests")
+public class IntegrationSpecTest {
 
     private PasswordGenerator passwordGenerator;
     private ApplicationPropertiesLoader propertiesLoader;
@@ -128,6 +127,7 @@ public class IntegrationSpec {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public String getNumbersList() {
         Map<String, Object> props = (Map<String, Object>) testResults.get("loadedProperties");
         if (props != null) {
@@ -136,6 +136,7 @@ public class IntegrationSpec {
         return "";
     }
 
+    @SuppressWarnings("unchecked")
     public String getSymbolsList() {
         Map<String, Object> props = (Map<String, Object>) testResults.get("loadedProperties");
         if (props != null) {
@@ -144,6 +145,7 @@ public class IntegrationSpec {
         return "";
     }
 
+    @SuppressWarnings("unchecked")
     public String getLettersList() {
         Map<String, Object> props = (Map<String, Object>) testResults.get("loadedProperties");
         if (props != null) {
@@ -231,9 +233,6 @@ public class IntegrationSpec {
             String invalidJson = "{ invalid json structure";
             passwordGenerator.generatePassword(invalidJson);
             testResults.put("invalidJsonHandled", false);
-        } catch (SecurityException e) {
-            testResults.put("invalidJsonHandled", true);
-            testResults.put("invalidJsonError", e.getMessage());
         } catch (Exception e) {
             testResults.put("invalidJsonHandled", true);
             testResults.put("invalidJsonError", e.getMessage());
@@ -304,7 +303,7 @@ public class IntegrationSpec {
         }
 
         // Collect results
-        Set<String> allPasswords = new ConcurrentHashMap<String, Boolean>().keySet(ConcurrentHashMap.newKeySet());
+        Set<String> allPasswords = ConcurrentHashMap.newKeySet();
         List<String> errors = new ArrayList<>();
         
         for (Future<List<String>> future : futures) {
@@ -332,11 +331,13 @@ public class IntegrationSpec {
         testResults.put("expectedTotal", threadCount * passwordsPerThread);
     }
 
+    @SuppressWarnings("unchecked")
     public boolean noConcurrencyErrors() {
         List<String> errors = (List<String>) testResults.getOrDefault("concurrencyErrors", new ArrayList<>());
         return errors.isEmpty();
     }
 
+    @SuppressWarnings("unchecked")
     public boolean allPasswordsUnique() {
         Set<String> passwords = (Set<String>) testResults.get("generatedPasswords");
         Integer totalGenerated = (Integer) testResults.get("totalGenerated");
@@ -361,5 +362,98 @@ public class IntegrationSpec {
         // Reasonable performance: less than 10ms per password on average
         double avgTimePerPassword = (double) executionTime / expectedTotal;
         return avgTimePerPassword < 10.0;
+    }
+
+    @Test
+    @DisplayName("Escenario 1: Carga del contexto de Spring")
+    void testSpringContextLoading() {
+        // When
+        loadSpringContext();
+        
+        // Then
+        assertTrue(isContextLoaded(), "Context should be loaded without errors");
+        assertTrue(hasRegisteredBeans(), "Should have registered beans");
+        assertTrue(isContextActive(), "Context should be active");
+        assertTrue(getBeansCount() > 0, "Should have at least one bean");
+    }
+
+    @Test
+    @DisplayName("Escenario 2: Inyección de dependencias")
+    void testDependencyInjection() {
+        // When
+        injectPasswordGenerator();
+        injectPropertiesLoader();
+        
+        // Then
+        assertTrue(isPasswordGeneratorInjected(), "PasswordGenerator should be injected");
+        assertTrue(isPropertiesLoaderInjected(), "PropertiesLoader should be injected");
+        assertEquals("PasswordGenerator", getPasswordGeneratorType(), "Should be correct type");
+        assertEquals("ApplicationPropertiesLoader", getPropertiesLoaderType(), "Should be correct type");
+    }
+
+    @Test
+    @DisplayName("Escenario 3: Configuración de propiedades")
+    void testConfigurationProperties() {
+        // When
+        loadConfigurationProperties("application.properties");
+        
+        // Then
+        assertEquals("0123456789", getNumbersList(), "Numbers list should be loaded correctly");
+        assertTrue(symbolsListIsNotEmpty(), "Symbols list should not be empty");
+        assertTrue(lettersListIsNotEmpty(), "Letters list should not be empty");
+    }
+
+    @Test
+    @DisplayName("Escenario 4: Integración end-to-end")
+    void testEndToEndIntegration() {
+        // Given
+        String jsonRules = "{\"length\":{\"min\":10,\"max\":15},\"digits\":{\"min\":2,\"max\":5},\"symbols\":{\"min\":1,\"max\":3}}";
+        
+        // Ensure dependencies are properly injected for this test
+        injectPasswordGenerator();
+        
+        // When
+        String password = generatePasswordEndToEnd(jsonRules);
+        
+        // Then
+        assertTrue(passwordWasGenerated(password), "Password should be generated successfully");
+        assertTrue(meetsLengthRequirements(password, 10, 15), "Should meet length requirements");
+        assertTrue(meetsDigitsRequirements(password, 2), "Should have minimum digits");
+        assertTrue(meetsSymbolsRequirements(password, 1), "Should have minimum symbols");
+        assertTrue(allComponentsWorked(), "All components should work together");
+    }
+
+    @Test
+    @DisplayName("Escenario 5: Manejo de errores en contexto Spring")
+    void testErrorHandlingInSpringContext() {
+        // Test file not found
+        tryLoadNonExistentProperties();
+        assertTrue(handlesFileNotFound(), "Should handle file not found error");
+        
+        // Test invalid JSON
+        tryInvalidJsonRules();
+        assertTrue(handlesInvalidJson(), "Should handle invalid JSON error");
+        
+        // Test impossible rules
+        tryImpossibleRulesInContext();
+        assertTrue(handlesImpossibleRules(), "Should handle impossible rules error");
+    }
+
+    @Test
+    @DisplayName("Escenario 6: Rendimiento y concurrencia")
+    void testPerformanceAndConcurrency() {
+        // Given
+        int threadCount = 5;
+        int passwordsPerThread = 20;
+        int expectedTotal = calculateTotal(threadCount, passwordsPerThread);
+        
+        // When
+        runConcurrencyTest(threadCount, passwordsPerThread);
+        
+        // Then
+        assertTrue(noConcurrencyErrors(), "Should have no concurrency errors");
+        assertTrue(allPasswordsUnique(), "Passwords should be unique");
+        assertTrue(executionTimeAcceptable(), "Execution time should be acceptable");
+        assertEquals(100, expectedTotal, "Should calculate total correctly");
     }
 }

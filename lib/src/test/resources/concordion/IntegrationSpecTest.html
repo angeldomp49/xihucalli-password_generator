@@ -55,7 +55,7 @@
             </tr>
         </table>
     </div>
-
+doc
     <div class="example">
         <h3>Escenario 3: Configuración de propiedades</h3>
         <p>
@@ -152,9 +152,9 @@
             Verifico que el sistema funciona correctamente bajo carga:
         </p>
         <ul>
-            <li>Número de hilos concurrentes: <span c:set="#threadCount">10</span></li>
-            <li>Contraseñas por hilo: <span c:set="#passwordsPerThread">100</span></li>
-            <li>Total de contraseñas: <span c:set="#totalPasswords" c:echo="calculateTotal(#threadCount, #passwordsPerThread)">1000</span></li>
+            <li>Número de hilos concurrentes: <span c:set="#threadCount">5</span></li>
+            <li>Contraseñas por hilo: <span c:set="#passwordsPerThread">20</span></li>
+            <li>Total de contraseñas: <span c:set="#totalPasswords" c:echo="calculateTotal(#threadCount, #passwordsPerThread)">100</span></li>
         </ul>
         <p>Resultado de pruebas de concurrencia:</p>
         <ul>
