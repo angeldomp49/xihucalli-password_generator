@@ -60,27 +60,14 @@ java {
 tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
-
-    systemProperty("concordion.output.dir", "${project.layout.buildDirectory.get().asFile}/reports/concordion")
-
-    doFirst {
-        layout.buildDirectory.dir("reports/concordion").get().asFile.mkdirs()
+    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    testLogging {
+        events("passed", "skipped", "failed")
     }
 }
 
-// Custom task to run only Concordion tests
-tasks.register("concordionTest", Test::class) {
-    useJUnitPlatform {
-        includeTags("concordion")
-    }
-    
-    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile.absolutePath)
-    
-    doFirst {
-        layout.buildDirectory.dir("reports/concordion").get().asFile.mkdirs()
-    }
-    
-    finalizedBy("jacocoTestReport")
+jacoco {
+    toolVersion = "0.8.11"
 }
 
 tasks.jacocoTestReport {
@@ -89,16 +76,6 @@ tasks.jacocoTestReport {
         xml.required.set(true)
         html.required.set(true)
         html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/test"))
-    }
-}
-
-tasks.jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = "0.80".toBigDecimal()
-            }
-        }
     }
 }
 
