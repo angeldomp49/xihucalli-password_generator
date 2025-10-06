@@ -1,120 +1,282 @@
-# README
+# Biblioteca Generador de Contraseñas
 
-Este proyecto es una biblioteca para la generación de contraseñas seguras. Permite a los usuarios generar contraseñas basadas en una variedad de reglas y criterios.
+Una biblioteca Java segura para generar contraseñas con reglas personalizables a través de configuración JSON. Esta biblioteca proporciona generación de contraseñas criptográficamente segura con validación exhaustiva y configuración flexible basada en reglas.
 
-## Ejemplo de uso
+## Tabla de Contenidos
 
-A continuación se muestran algunos ejemplos de cómo utilizar la biblioteca.
+- [Introducción](#introducción)
+- [Instalación y Configuración](#instalación-y-configuración)
+- [Uso Básico](#uso-básico)
+- [Formato de Reglas JSON](#formato-de-reglas-json)
+- [Casos de Uso Avanzados](#casos-de-uso-avanzados)
+- [Manejo de Errores](#manejo-de-errores)
+- [Ejemplos](#ejemplos)
+- [Enlaces de Documentación](#enlaces-de-documentación)
 
-### Ejemplo 1: Generación de una contraseña simple
+## Introducción
 
-Este ejemplo genera una contraseña con una longitud entre 8 y 30 caracteres, incluyendo al menos 8 dígitos y 8 símbolos.
+La Biblioteca Generador de Contraseñas está diseñada para aplicaciones empresariales que requieren generación de contraseñas segura y compatible con control granular sobre la composición de contraseñas. A diferencia de los generadores de contraseñas aleatorios simples, esta biblioteca proporciona:
+
+- **Seguridad Criptográfica**: Utiliza `SecureRandom` y `ThreadLocalRandom` para generación criptográficamente segura
+- **Validación de Reglas**: La validación de viabilidad matemática previene configuraciones de reglas imposibles
+- **Configuración Flexible**: Las reglas basadas en JSON permiten requisitos de contraseña complejos
+- **Listo para Empresas**: Maneja casos extremos y proporciona informes de errores completos
+
+### Casos de Uso Empresariales
+
+- **Sistemas de Registro de Usuarios**: Generar contraseñas seguras que cumplan políticas organizacionales
+- **Generación de Claves API**: Crear tokens de autenticación fuertes con requisitos de caracteres específicos
+- **Sistemas de Contraseñas Temporales**: Generar contraseñas para flujos de restablecimiento de contraseña
+- **Requisitos de Cumplimiento**: Cumplir estándares de seguridad específicos (PCI-DSS, SOX, etc.)
+
+## Instalación y Configuración
+
+### Requisitos del Sistema
+
+- Java 17 o superior
+- Gradle para construir el proyecto
+
+### Construcción del Proyecto
+
+```bash
+./gradlew build
+```
+
+### Integración de la Biblioteca
 
 ```java
 import org.makechtec.xihucalli.password_generator.PasswordGenerator;
 
-// Es necesario instanciar PasswordGenerator con las listas de caracteres.
-// Este es un ejemplo de cómo se podría hacer.
-PasswordGenerator passwordGenerator = new PasswordGenerator(
+// Inicializar con conjuntos de caracteres personalizados
+PasswordGenerator generator = new PasswordGenerator(
+    "0123456789",                                           // dígitos
+    "!@#$%^&*()_+-=[]{}|;':,./<>?",                        // símbolos
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" // letras
+);
+```
+
+## Uso Básico
+
+### Ejemplo Mínimo
+
+```java
+PasswordGenerator generator = new PasswordGenerator(
     "0123456789",
-    "!@#$%^&*()_+-=[]{}|;':,./<>?",
+    "!@#$%^&*()",
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 );
 
-var rules = """
-        {
-          "length": {
-            "min": 8,
-            "max": 30
-          },
-          "digits": {
-            "min": 8,
-            "max": 30,
-            "exclude": [],
-            "include": []
-          },
-          "symbols": {
-            "min": 8,
-            "max": 30,
-            "exclude": [],
-            "include": []
-          },
-          "letters": {
-            "exclude": [],
-            "include": []
-          }
-        }
-        """;
+String rules = """
+{
+  "length": {"min": 8, "max": 12}
+}
+""";
 
-var password = passwordGenerator.generatePassword(rules);
-System.out.println(password);
+try {
+    String password = generator.generatePassword(rules);
+    System.out.println("Contraseña generada: " + password);
+} catch (SecurityException e) {
+    System.err.println("La generación de contraseña falló: " + e.getMessage());
+}
 ```
 
-### Ejemplo 2: Excluir caracteres específicos
+### Manejo de Excepciones
 
-En este caso, se genera una contraseña excluyendo ciertos dígitos, símbolos y letras.
+La biblioteca lanza `SecurityException` para varios escenarios:
+- Formato JSON inválido
+- Reglas matemáticamente imposibles
+- Generación fallida después del máximo de intentos (1000)
 
 ```java
-var rules = """
-        {
-          "length": {
-            "min": 8,
-            "max": 30
-          },
-          "digits": {
-            "min": 8,
-            "max": 30,
-            "exclude": [ 0, 1 ],
-            "include": []
-          },
-          "symbols": {
-            "min": 8,
-            "max": 30,
-            "exclude": [ "$", "%" ],
-            "include": []
-          },
-          "letters": {
-            "exclude": [ "a", "F" ],
-            "include": []
-          }
-        }
-        """;
-
-var password = passwordGenerator.generatePassword(rules);
-System.out.println(password); // No contendrá '0', '1', '$', '%', 'a', 'F'
+try {
+    String password = generator.generatePassword(rules);
+} catch (SecurityException e) {
+    // Manejar casos de error específicos basados en el mensaje
+    if (e.getMessage().contains("mathematically impossible")) {
+        // Ajustar reglas y reintentar
+    }
+}
 ```
 
-### Ejemplo 3: Forzar la inclusión de caracteres
+## Formato de Reglas JSON
 
-Aquí se genera una contraseña de 8 caracteres que solo contiene letras, y debe incluir 'a' y 'F'.
+Las reglas de generación de contraseñas se especifican usando un formato JSON estructurado:
+
+```json
+{
+  "length": {
+    "min": 8,
+    "max": 16
+  },
+  "digits": {
+    "min": 2,
+    "max": 4,
+    "include": [1, 2, 3],
+    "exclude": [0, 5]
+  },
+  "symbols": {
+    "min": 1,
+    "max": 3,
+    "include": ["@", "#"],
+    "exclude": ["&", "%"]
+  },
+  "letters": {
+    "include": ["A", "B", "C"],
+    "exclude": ["l", "I", "O"]
+  }
+}
+```
+
+### Propiedades de Reglas
+
+| Propiedad | Tipo | Descripción | Por Defecto |
+|-----------|------|-------------|-------------|
+| `length.min` | entero | Longitud mínima de contraseña | 1 |
+| `length.max` | entero | Longitud máxima de contraseña | Long.MAX_VALUE |
+| `digits.min` | entero | Número mínimo de dígitos | 0 |
+| `digits.max` | entero | Número máximo de dígitos | Long.MAX_VALUE |
+| `digits.include` | array de enteros | Dígitos requeridos | [] |
+| `digits.exclude` | array de enteros | Dígitos prohibidos | [] |
+| `symbols.min` | entero | Número mínimo de símbolos | 0 |
+| `symbols.max` | entero | Número máximo de símbolos | Long.MAX_VALUE |
+| `symbols.include` | array de strings | Símbolos requeridos | [] |
+| `symbols.exclude` | array de strings | Símbolos prohibidos | [] |
+| `letters.include` | array de strings | Letras requeridas | [] |
+| `letters.exclude` | array de strings | Letras prohibidas | [] |
+
+## Casos de Uso Avanzados
+
+### Política de Seguridad Corporativa
 
 ```java
-var rules = """
-        {
-          "length": {
-            "min": 8,
-            "max": 8
-          },
-          "digits": {
-            "min": 0,
-            "max": 0
-          },
-          "symbols": {
-            "min": 0,
-            "max": 0
-          },
-          "letters": {
-            "include": [ "a", "F" ]
-          }
-        }
-        """;
-
-var password = passwordGenerator.generatePassword(rules);
-System.out.println(password); // Contendrá 'a' y 'F'
+// Contraseña de alta seguridad para cuentas administrativas
+String corporateRules = """
+{
+  "length": {"min": 14, "max": 20},
+  "digits": {"min": 3, "max": 5},
+  "symbols": {"min": 2, "max": 4, "exclude": ["<", ">", "&"]},
+  "letters": {"exclude": ["l", "I", "1", "0", "O"]}
+}
+""";
 ```
 
-## Changelog
+### Generación de Claves API
 
-- **1.0.0** - Primera versión estable de la biblioteca.
-- **1.1.0** - Se añadieron más ejemplos en la documentación.
-- **1.2.0** - Se mejoró la generación de contraseñas con reglas más complejas.
+```java
+// Generar claves API con requisitos de formato específicos
+String apiKeyRules = """
+{
+  "length": {"min": 32, "max": 32},
+  "digits": {"min": 8},
+  "letters": {"include": ["A", "B", "C", "D", "E", "F"]}
+}
+""";
+```
+
+### Generación de PIN
+
+```java
+PasswordGenerator pinGenerator = new PasswordGenerator("0123456789", "", "");
+String pinRules = """
+{
+  "length": {"min": 4, "max": 6},
+  "digits": {"min": 4, "exclude": [0]}
+}
+""";
+```
+
+## Manejo de Errores
+
+Escenarios comunes de error y sus soluciones:
+
+### Configuración de Reglas Inválida
+- **Error**: "Configuración de reglas de contraseña inválida"
+- **Causa**: minLength > maxLength, valores negativos
+- **Solución**: Validar restricciones de reglas antes de la generación
+
+### Reglas Matemáticamente Imposibles
+- **Error**: "Las reglas de contraseña son matemáticamente imposibles de satisfacer"
+- **Causa**: minDigits + minSymbols > maxLength
+- **Solución**: Ajustar requisitos mínimos o aumentar longitud máxima
+
+### Fallo de Generación
+- **Error**: "No se puede generar contraseña que cumpla requisitos de seguridad después del máximo de intentos"
+- **Causa**: Reglas muy restrictivas causando fallos repetidos
+- **Solución**: Relajar algunas restricciones o verificar disponibilidad del conjunto de caracteres
+
+## Ejemplos
+
+### Ejemplo 1: Contraseña Básica de 8 Caracteres
+
+```java
+PasswordGenerator generator = new PasswordGenerator(
+    "0123456789",
+    "!@#$%^&*()",
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+);
+
+String rules = """
+{
+  "length": {"min": 8, "max": 8},
+  "digits": {"min": 2},
+  "symbols": {"min": 1}
+}
+""";
+
+String password = generator.generatePassword(rules);
+// Ejemplo de resultado: "aB3#xY9z"
+```
+
+### Ejemplo 2: Contraseña de Alta Seguridad
+
+```java
+String highSecurityRules = """
+{
+  "length": {"min": 16, "max": 24},
+  "digits": {"min": 4, "max": 6},
+  "symbols": {"min": 3, "max": 5},
+  "letters": {
+    "include": ["A", "B", "C"],
+    "exclude": ["l", "I", "O", "0"]
+  }
+}
+""";
+
+String strongPassword = generator.generatePassword(highSecurityRules);
+// Ejemplo de resultado: "A7B#2C@9x$4mN5pQ"
+```
+
+### Ejemplo 3: PIN Numérico
+
+```java
+PasswordGenerator pinGenerator = new PasswordGenerator(
+    "0123456789",
+    "",
+    ""
+);
+
+String pinRules = """
+{
+  "length": {"min": 4, "max": 6},
+  "digits": {"min": 4, "exclude": [0]}
+}
+""";
+
+String pin = generator.generatePassword(pinRules);
+// Ejemplo de resultado: "4729"
+```
+
+## Enlaces de Documentación
+
+- [Guía de Lógica de Negocio](business-logic/password-generation-rules.md)
+- [Escenarios Comunes](examples/common-scenarios.md)
+- [Guía de Manejo de Errores](error-handling/security-exceptions.md)
+- [Matriz de Cobertura de Pruebas](testing/test-coverage-matrix.md)
+- [Guía de Migración](migration/upgrade-guide.md)
+- [Preguntas Frecuentes](faq.md)
+
+---
+
+**Versión**: 1.3.0  
+**Última Actualización**: Diciembre 2024  
+**Licencia**: [Información de licencia]
