@@ -17,7 +17,7 @@ plugins {
 
 // Configure JaCoCo extension explicitly to avoid unresolved reference in static analysis
 extensions.configure<JacocoPluginExtension> {
-    toolVersion = "0.8.10"
+    toolVersion = "0.8.11"
 }
 
 project.version = "1.2.0"
@@ -30,8 +30,21 @@ repositories {
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)
-
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // Concordion dependencies for integration testing
+    testImplementation("org.concordion:concordion:4.1.0")
+    testImplementation("org.concordion:concordion-junit-jupiter:4.1.0")
+    
+    // Mockito for minimal mocking
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.7.0")
+    
+    // AssertJ for fluent assertions
+    testImplementation("org.assertj:assertj-core:3.24.2")
+    
+    // Spring Boot Test for integration testing
+    testImplementation("org.springframework.boot:spring-boot-starter-test:3.1.0")
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api(libs.commons.math3)
@@ -49,48 +62,27 @@ java {
     }
 }
 
-tasks.named<Test>("test") {
-    // Use JUnit Platform for unit tests.
+tasks.test {
     useJUnitPlatform()
-    // Ensure report task runs after tests
-    finalizedBy("jacocoTestReport")
+    finalizedBy(tasks.jacocoTestReport)
 }
 
-// Replace unconditional registration with a guarded configuration so we don't register the task twice
-val existingJacoco = tasks.findByName("jacocoTestReport") as? JacocoReport
-if (existingJacoco == null) {
-    tasks.register<JacocoReport>("jacocoTestReport") {
-        dependsOn(tasks.named("test"))
-
-        reports {
-            xml.required.set(true)
-            html.required.set(true)
-            csv.required.set(false)
-        }
-
-        // Adjust paths if your sources/classes are in different locations
-        val mainSrc = "src/main/java"
-        classDirectories.setFrom(fileTree("${buildDir}/classes/java/main") {
-            // exclude generated or irrelevant classes if needed
-            exclude("**/R.class", """**/R${'$'}*.class""", """**/*${'$'}ViewInjector*.*""")
-        })
-        sourceDirectories.setFrom(files(mainSrc))
-        executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec", "**/*.exec"))
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/test"))
     }
-} else {
-    existingJacoco.apply {
-        dependsOn(tasks.named("test"))
-        reports {
-            xml.required.set(true)
-            html.required.set(true)
-            csv.required.set(false)
+}
+
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.80".toBigDecimal()
+            }
         }
-        val mainSrc = "src/main/java"
-        classDirectories.setFrom(fileTree("${buildDir}/classes/java/main") {
-            exclude("**/R.class", """**/R${'$'}*.class""", """**/*${'$'}ViewInjector*.*""")
-        })
-        sourceDirectories.setFrom(files(mainSrc))
-        executionData.setFrom(fileTree(buildDir).include("**/jacoco/*.exec", "**/*.exec"))
     }
 }
 
