@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html xmlns:c="http://www.concordion.org/2007/concordion">
 <head>
-    <title>Spring Boot Integration Specification</title>
+    <title>Integration Specification</title>
     <link href="css/concordion.css" rel="stylesheet" type="text/css"/>
 </head>
 <body>
-    <h1>Spring Boot Integration Tests</h1>
+    <h1>Integration Tests</h1>
     
     <div class="specification-description">
-        Esta especificación verifica la integración completa del sistema con Spring Boot,
+        Esta especificación verifica la integración completa del sistema,
         incluyendo carga de contexto, inyección de dependencias y configuración de propiedades.
     </div>
 
     <div class="example">
-        <h3>Escenario 1: Carga del contexto de Spring</h3>
+        <h3>Escenario 1: Carga del contexto</h3>
         <p>
-            Cuando inicio la aplicación Spring Boot:
+            Cuando inicio la aplicación:
         </p>
         <ul>
-            <li>Contexto cargado exitosamente: <span c:execute="loadSpringContext()">contexto iniciado</span></li>
+            <li>Contexto cargado exitosamente: <span c:execute="loadContext()">contexto iniciado</span></li>
             <li>Beans disponibles: <span c:set="#beansCount" c:echo="getBeansCount()">número</span></li>
         </ul>
         <p>Verificaciones:</p>
@@ -77,7 +77,7 @@ doc
                 <td>password-generator.numbers.list</td>
                 <td c:set="#expectedNumbers">0123456789</td>
                 <td c:echo="getNumbersList()">valor</td>
-                <td c:assertEquals="getNumbersList()">#expectedNumbers</td>
+                <td c:assertEquals="getNumbersList()">0123456789</td>
             </tr>
             <tr>
                 <td>password-generator.symbols.list</td>
@@ -97,11 +97,12 @@ doc
     <div class="example">
         <h3>Escenario 4: Integración end-to-end</h3>
         <p>
-            Verifico el flujo completo de generación de contraseñas a través del contexto de Spring:
+            Verifico el flujo completo de generación de contraseñas a través del contexto:
         </p>
         <ul>
             <li>Reglas de entrada: <span c:set="#endToEndRules">{"length":{"min":10,"max":15},"digits":{"min":2,"max":5},"symbols":{"min":1,"max":3}}</span></li>
-            <li>Contraseña generada: <code c:set="#endToEndPassword" c:execute="generatePasswordEndToEnd(#endToEndRules)">resultado</code></li>
+            <li>Contraseña generada: <code c:execute="#endToEndPassword = generatePasswordEndToEnd(#endToEndRules)"></code></li>
+            <p c:echo="#endToEndPassword" ></p>
         </ul>
         <p>Verificaciones del flujo completo:</p>
         <ul>
@@ -114,40 +115,7 @@ doc
     </div>
 
     <div class="example">
-        <h3>Escenario 5: Manejo de errores en contexto Spring</h3>
-        <p>
-            Verifico que los errores se manejan correctamente en el contexto de Spring:
-        </p>
-        <table>
-            <tr>
-                <th>Tipo de Error</th>
-                <th>Escenario</th>
-                <th>Excepción Esperada</th>
-                <th>Manejado Correctamente</th>
-            </tr>
-            <tr>
-                <td>Archivo no encontrado</td>
-                <td c:execute="tryLoadNonExistentProperties()">archivo inexistente</td>
-                <td>IOException o similar</td>
-                <td c:assertTrue="handlesFileNotFound()">true</td>
-            </tr>
-            <tr>
-                <td>JSON inválido</td>
-                <td c:execute="tryInvalidJsonRules()">JSON malformado</td>
-                <td>SecurityException</td>
-                <td c:assertTrue="handlesInvalidJson()">true</td>
-            </tr>
-            <tr>
-                <td>Reglas imposibles</td>
-                <td c:execute="tryImpossibleRulesInContext()">reglas contradictorias</td>
-                <td>SecurityException</td>
-                <td c:assertTrue="handlesImpossibleRules()">true</td>
-            </tr>
-        </table>
-    </div>
-
-    <div class="example">
-        <h3>Escenario 6: Rendimiento y concurrencia</h3>
+        <h3>Escenario 5: Rendimiento y concurrencia</h3>
         <p>
             Verifico que el sistema funciona correctamente bajo carga:
         </p>

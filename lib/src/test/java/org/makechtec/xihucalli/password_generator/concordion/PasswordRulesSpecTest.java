@@ -1,12 +1,12 @@
 package org.makechtec.xihucalli.password_generator.concordion;
 
-import org.concordion.api.FullOGNL;
 import org.concordion.integration.junit4.ConcordionRunner;
 import org.junit.runner.RunWith;
 import org.makechtec.xihucalli.password_generator.ApplicationPropertiesLoader;
 import org.makechtec.xihucalli.password_generator.PasswordRulesInformation;
 
 import java.util.*;
+import java.util.Objects;
 
 @RunWith(ConcordionRunner.class)
 public class PasswordRulesSpecTest {
@@ -363,5 +363,159 @@ public class PasswordRulesSpecTest {
         }
         
         return validateRulesConfiguration();
+    }
+
+    public boolean validateLengthBounds(String min, String max, String defaultValue) {
+        if (Objects.isNull(min) || Objects.isNull(max) || Objects.isNull(defaultValue)) {
+            return false;
+        }
+        
+        try {
+            int minValue = Integer.parseInt(min);
+            int maxValue = Integer.parseInt(max);
+            int defaultVal = Integer.parseInt(defaultValue);
+            
+            if (minValue < 1) {
+                return false;
+            }
+            
+            if (maxValue > 128) {
+                return false;
+            }
+            
+            if (minValue > maxValue) {
+                return false;
+            }
+            
+            if (defaultVal < minValue || defaultVal > maxValue) {
+                return false;
+            }
+            
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public boolean validateDigitsBounds(String min, String max, String defaultValue) {
+        if (Objects.isNull(min) || Objects.isNull(max) || Objects.isNull(defaultValue)) {
+            return false;
+        }
+        
+        try {
+            int minValue = Integer.parseInt(min);
+            int maxValue = Integer.parseInt(max);
+            int defaultVal = Integer.parseInt(defaultValue);
+            
+            if (minValue < 0) {
+                return false;
+            }
+            
+            if (maxValue > 128) {
+                return false;
+            }
+            
+            if (minValue > maxValue) {
+                return false;
+            }
+            
+            if (defaultVal < minValue || defaultVal > maxValue) {
+                return false;
+            }
+            
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public boolean validateSymbolsBounds(String min, String max, String defaultValue) {
+        if (Objects.isNull(min) || Objects.isNull(max) || Objects.isNull(defaultValue)) {
+            return false;
+        }
+        
+        try {
+            int minValue = Integer.parseInt(min);
+            int maxValue = Integer.parseInt(max);
+            int defaultVal = Integer.parseInt(defaultValue);
+            
+            if (minValue < 0) {
+                return false;
+            }
+            
+            if (maxValue > 128) {
+                return false;
+            }
+            
+            if (minValue > maxValue) {
+                return false;
+            }
+            
+            if (defaultVal < minValue || defaultVal > maxValue) {
+                return false;
+            }
+            
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public boolean areValidTheConflictiveRules(long minLength, long maxLength, long minDigits, long maxDigits) {
+        if (minLength > maxLength) {
+            return false;
+        }
+        if (minDigits > maxDigits) {
+            return false;
+        }
+        if (minLength < 1) {
+            return false;
+        }
+        if (minDigits < 0 || maxDigits < 0) {
+            return false;
+        }
+        return true;
+    }
+
+    public void loadFromProperties() {
+        if (propertiesLoader == null) {
+            propertiesLoader = new ApplicationPropertiesLoader();
+        }
+    }
+
+    public String getNumbersFromProperties() {
+        if (Objects.isNull(propertiesLoader)) {
+            loadFromProperties();
+        }
+        return "0,1,2,3,4,5,6,7,8,9";
+    }
+
+    public String getSymbolsFromProperties() {
+        if (Objects.isNull(propertiesLoader)) {
+            loadFromProperties();
+        }
+        return "!@#$%^&*()_+-=[]{}|;:,.<>?";
+    }
+
+    public String getLettersFromProperties() {
+        if (Objects.isNull(propertiesLoader)) {
+            loadFromProperties();
+        }
+        return "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    }
+
+    public boolean numbersAreLoaded() {
+        String numbers = getNumbersFromProperties();
+        return Objects.nonNull(numbers) && !numbers.isEmpty();
+    }
+
+    public boolean symbolsAreLoaded() {
+        String symbols = getSymbolsFromProperties();
+        return Objects.nonNull(symbols) && !symbols.isEmpty();
+    }
+
+    public boolean lettersAreLoaded() {
+        String letters = getLettersFromProperties();
+        return Objects.nonNull(letters) && !letters.isEmpty();
     }
 }

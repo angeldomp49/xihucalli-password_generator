@@ -40,3 +40,9 @@
 Use the following dependencies unless, other dependencies are explicitly indicated in the prompt.
 
 - **atepoztli/ioc_container:3.3.0-RELEASE**: For dependency injection.
+
+## Specific configurations for this project ##
+
+### Dependencies ###
+
+This project doesn't use any dependency manager, nor spring boot or ioc_container.

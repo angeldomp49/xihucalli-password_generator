@@ -1,5 +1,6 @@
 package org.makechtec.xihucalli.password_generator.concordion;
 
+import org.concordion.api.FullOGNL;
 import org.concordion.integration.junit4.ConcordionRunner;
 import org.junit.runner.RunWith;
 import org.makechtec.xihucalli.password_generator.ApplicationPropertiesLoader;
@@ -9,18 +10,19 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@FullOGNL
 @RunWith(ConcordionRunner.class)
 public class IntegrationSpecTest {
 
     private PasswordGenerator passwordGenerator;
     private ApplicationPropertiesLoader propertiesLoader;
-    private final Map<String, Object> springContext = new ConcurrentHashMap<>();
+    private final Map<String, Object> plainContext = new ConcurrentHashMap<>();
     private final ExecutorService executorService = Executors.newFixedThreadPool(20);
     private final AtomicInteger beansCount = new AtomicInteger(0);
     private boolean contextLoaded = false;
 
     public void setUp() {
-        springContext.clear();
+        plainContext.clear();
         beansCount.set(0);
         contextLoaded = false;
         
@@ -35,13 +37,13 @@ public class IntegrationSpecTest {
         );
     }
 
-    public boolean loadSpringContext() {
+    public boolean loadContext() {
         if (!contextLoaded) {
             setUp();
         }
         
-        springContext.put("passwordGenerator", passwordGenerator);
-        springContext.put("propertiesLoader", propertiesLoader);
+        plainContext.put("passwordGenerator", passwordGenerator);
+        plainContext.put("propertiesLoader", propertiesLoader);
         beansCount.set(2);
         contextLoaded = true;
         return true;
@@ -70,25 +72,25 @@ public class IntegrationSpecTest {
     public boolean injectPasswordGenerator() {
         if (!contextLoaded) {
             setUp();
-            loadSpringContext();
+            loadContext();
         }
-        return springContext.containsKey("passwordGenerator");
+        return plainContext.containsKey("passwordGenerator");
     }
 
     public boolean injectPropertiesLoader() {
         if (!contextLoaded) {
             setUp();
-            loadSpringContext();
+            loadContext();
         }
-        return springContext.containsKey("propertiesLoader");
+        return plainContext.containsKey("propertiesLoader");
     }
 
     public boolean isPasswordGeneratorInjected() {
-        return springContext.containsKey("passwordGenerator");
+        return plainContext.containsKey("passwordGenerator");
     }
 
     public boolean isPropertiesLoaderInjected() {
-        return springContext.containsKey("propertiesLoader");
+        return plainContext.containsKey("propertiesLoader");
     }
 
     public String getPasswordGeneratorType() {
@@ -125,15 +127,14 @@ public class IntegrationSpecTest {
         return letters != null && !letters.isEmpty();
     }
 
-    public boolean generatePasswordEndToEnd(String jsonRules) {
+    public String generatePasswordEndToEnd(String jsonRules) {
         try {
             if (passwordGenerator == null) {
                 setUp();
             }
-            String password = passwordGenerator.generatePassword(jsonRules);
-            return password != null && !password.isEmpty();
+            return passwordGenerator.generatePassword(jsonRules);
         } catch (Exception e) {
-            return false;
+            return "";
         }
     }
 
@@ -212,7 +213,7 @@ public class IntegrationSpecTest {
     }
 
     public boolean isDependencyInjected(String beanName) {
-        return springContext.containsKey(beanName);
+        return plainContext.containsKey(beanName);
     }
 
     private boolean loadProperties(String filename) {
