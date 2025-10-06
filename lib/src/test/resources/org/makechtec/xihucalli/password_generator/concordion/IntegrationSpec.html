@@ -81,7 +81,7 @@ doc
             </tr>
             <tr>
                 <td>password-generator.symbols.list</td>
-                <td c:set="#expectedSymbols">!@#$%^&*()_+-=[]{}|;:,.<>?</td>
+                <td c:set="#expectedSymbols">!@#$%^&amp;*()_+-=[]{}|;:,.&lt;&gt;?</td>
                 <td c:echo="getSymbolsList()">valor</td>
                 <td c:assertTrue="symbolsListIsNotEmpty()">no vacío</td>
             </tr>

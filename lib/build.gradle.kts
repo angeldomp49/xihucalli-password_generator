@@ -64,9 +64,9 @@ tasks.test {
     // Configuración específica para Concordion
     systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
     
-    // Asegurar que las pruebas de Concordion se incluyan
+    // Asegurar que las pruebas de Concordion se incluyan junto con las pruebas regulares
     include("**/*Test.class")
-    include("**/*Spec*.class")
+    include("**/*SpecTest.class")
     
     testLogging {
         events("passed", "skipped", "failed")
@@ -86,9 +86,8 @@ tasks.register<Test>("concordionTest") {
     group = "verification"
     description = "Runs Concordion specification tests and generates reports"
     
-    // Incluir las pruebas que contengan 'Spec' o 'Concordion' en el nombre
+    // Incluir las pruebas que contengan 'Spec' en el nombre
     include("**/*SpecTest.class")
-    include("**/*ConcordionTest.class")
     
     systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
     
