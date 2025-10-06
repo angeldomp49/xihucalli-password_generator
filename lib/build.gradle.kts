@@ -5,13 +5,21 @@
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/8.14.2/userguide/building_java_projects.html in the Gradle documentation.
  */
 
+import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
+
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
     `maven-publish`
+    id("jacoco")
 }
 
-project.version = "1.0.0"
+// Configure JaCoCo extension explicitly to avoid unresolved reference in static analysis
+extensions.configure<JacocoPluginExtension> {
+    toolVersion = "0.8.11"
+}
+
+project.version = "1.2.0"
 
 repositories {
     // Use Maven Central for resolving dependencies.
@@ -19,10 +27,19 @@ repositories {
 }
 
 dependencies {
-    // Use JUnit Jupiter for testing.
     testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform)
+    testRuntimeOnly(libs.junit.vintage.engine)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // Testing dependencies
+    testImplementation(libs.concordion)
+    
+    // Mockito for minimal mocking
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
+    
+    // AssertJ for fluent assertions
+    testImplementation("org.assertj:assertj-core:3.25.1")
 
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api(libs.commons.math3)
@@ -40,9 +57,66 @@ java {
     }
 }
 
-tasks.named<Test>("test") {
-    // Use JUnit Platform for unit tests.
+tasks.test {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+    
+    // Configuración específica para Concordion
+    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    
+    // Asegurar que las pruebas de Concordion se incluyan junto con las pruebas regulares
+    include("**/*Test.class")
+    include("**/*SpecTest.class")
+    
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = false
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    
+    // Crear el directorio de reportes de Concordion antes de ejecutar las pruebas
+    doFirst {
+        mkdir(layout.buildDirectory.dir("reports/concordion").get().asFile)
+    }
+}
+
+// Tarea específica para ejecutar solo las pruebas de Concordion
+tasks.register<Test>("concordionTest") {
+    useJUnitPlatform()
+    group = "verification"
+    description = "Runs Concordion specification tests and generates reports"
+    
+    // Incluir las pruebas que contengan 'Spec' en el nombre
+    include("**/*SpecTest.class")
+    
+    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+    
+    doFirst {
+        mkdir(layout.buildDirectory.dir("reports/concordion").get().asFile)
+    }
+    
+    doLast {
+        println("Concordion reports generated at: ${layout.buildDirectory.dir("reports/concordion").get().asFile}")
+    }
+}
+
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/test"))
+    }
 }
 
 publishing {

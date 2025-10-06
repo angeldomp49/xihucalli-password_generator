@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:c="http://www.concordion.org/2007/concordion">
+<head>
+    <title>Integration Specification</title>
+    <link href="css/concordion.css" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+    <h1>Integration Tests</h1>
+    
+    <div class="specification-description">
+        Esta especificación verifica la integración completa del sistema,
+        incluyendo carga de contexto, inyección de dependencias y configuración de propiedades.
+    </div>
+
+    <div class="example">
+        <h3>Escenario 1: Carga del contexto</h3>
+        <p>
+            Cuando inicio la aplicación:
+        </p>
+        <ul>
+            <li>Contexto cargado exitosamente: <span c:execute="loadContext()">contexto iniciado</span></li>
+            <li>Beans disponibles: <span c:set="#beansCount" c:echo="getBeansCount()">número</span></li>
+        </ul>
+        <p>Verificaciones:</p>
+        <ul>
+            <li>El contexto se carga sin errores: <strong c:assertTrue="isContextLoaded()">true</strong></li>
+            <li>Hay beans registrados: <strong c:assertTrue="hasRegisteredBeans()">true</strong></li>
+            <li>El contexto está activo: <strong c:assertTrue="isContextActive()">true</strong></li>
+        </ul>
+    </div>
+
+    <div class="example">
+        <h3>Escenario 2: Inyección de dependencias</h3>
+        <p>
+            Verifico que la inyección de dependencias funciona correctamente:
+        </p>
+        <table>
+            <tr>
+                <th>Componente</th>
+                <th>Bean Inyectado</th>
+                <th>Estado</th>
+                <th>Tipo</th>
+            </tr>
+            <tr>
+                <td>PasswordGenerator</td>
+                <td c:execute="injectPasswordGenerator()">inyectado</td>
+                <td c:assertTrue="isPasswordGeneratorInjected()">disponible</td>
+                <td c:echo="getPasswordGeneratorType()">clase</td>
+            </tr>
+            <tr>
+                <td>ApplicationPropertiesLoader</td>
+                <td c:execute="injectPropertiesLoader()">inyectado</td>
+                <td c:assertTrue="isPropertiesLoaderInjected()">disponible</td>
+                <td c:echo="getPropertiesLoaderType()">clase</td>
+            </tr>
+        </table>
+    </div>
+doc
+    <div class="example">
+        <h3>Escenario 3: Configuración de propiedades</h3>
+        <p>
+            Cuando cargo las propiedades de configuración:
+        </p>
+        <ul>
+            <li>Archivo de propiedades: <span c:set="#propertiesFile">application.properties</span></li>
+            <li>Propiedades cargadas: <span c:execute="loadConfigurationProperties(#propertiesFile)">cargadas</span></li>
+        </ul>
+        <p>Verificaciones de propiedades específicas:</p>
+        <table>
+            <tr>
+                <th>Propiedad</th>
+                <th>Valor Esperado</th>
+                <th>Valor Actual</th>
+                <th>Válido</th>
+            </tr>
+            <tr>
+                <td>password-generator.numbers.list</td>
+                <td c:set="#expectedNumbers">0123456789</td>
+                <td c:echo="getNumbersList()">valor</td>
+                <td c:assertEquals="getNumbersList()">0123456789</td>
+            </tr>
+            <tr>
+                <td>password-generator.symbols.list</td>
+                <td c:set="#expectedSymbols">!@#$%^&amp;*()_+-=[]{}|;:,.&lt;&gt;?</td>
+                <td c:echo="getSymbolsList()">valor</td>
+                <td c:assertTrue="symbolsListIsNotEmpty()">no vacío</td>
+            </tr>
+            <tr>
+                <td>password-generator.letters.list</td>
+                <td c:set="#expectedLetters">abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ</td>
+                <td c:echo="getLettersList()">valor</td>
+                <td c:assertTrue="lettersListIsNotEmpty()">no vacío</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="example">
+        <h3>Escenario 4: Integración end-to-end</h3>
+        <p>
+            Verifico el flujo completo de generación de contraseñas a través del contexto:
+        </p>
+        <ul>
+            <li>Reglas de entrada: <span c:set="#endToEndRules">{"length":{"min":10,"max":15},"digits":{"min":2,"max":5},"symbols":{"min":1,"max":3}}</span></li>
+            <li>Contraseña generada: <code c:execute="#endToEndPassword = generatePasswordEndToEnd(#endToEndRules)"></code></li>
+            <p c:echo="#endToEndPassword" ></p>
+        </ul>
+        <p>Verificaciones del flujo completo:</p>
+        <ul>
+            <li>La contraseña se generó exitosamente: <strong c:assertTrue="passwordWasGenerated(#endToEndPassword)">true</strong></li>
+            <li>Cumple con las reglas de longitud: <strong c:assertTrue="meetsLengthRequirements(#endToEndPassword, 10, 15)">true</strong></li>
+            <li>Tiene el mínimo de dígitos: <strong c:assertTrue="meetsDigitsRequirements(#endToEndPassword, 2)">true</strong></li>
+            <li>Tiene el mínimo de símbolos: <strong c:assertTrue="meetsSymbolsRequirements(#endToEndPassword, 1)">true</strong></li>
+            <li>Todos los componentes interactuaron correctamente: <strong c:assertTrue="allComponentsWorked()">true</strong></li>
+        </ul>
+    </div>
+
+    <div class="example">
+        <h3>Escenario 5: Rendimiento y concurrencia</h3>
+        <p>
+            Verifico que el sistema funciona correctamente bajo carga:
+        </p>
+        <ul>
+            <li>Número de hilos concurrentes: <span c:set="#threadCount">5</span></li>
+            <li>Contraseñas por hilo: <span c:set="#passwordsPerThread">20</span></li>
+            <li>Total de contraseñas: <span c:set="#totalPasswords" c:echo="calculateTotal(#threadCount, #passwordsPerThread)">100</span></li>
+        </ul>
+        <p>Resultado de pruebas de concurrencia:</p>
+        <ul>
+            <li>Todas las contraseñas generadas: <span c:execute="runConcurrencyTest(#threadCount, #passwordsPerThread)">ejecutado</span></li>
+            <li>Sin errores de concurrencia: <strong c:assertTrue="noConcurrencyErrors()">true</strong></li>
+            <li>Todas las contraseñas son únicas: <strong c:assertTrue="allPasswordsUnique()">true</strong></li>
+            <li>Tiempo de ejecución aceptable: <strong c:assertTrue="executionTimeAcceptable()">true</strong></li>
+        </ul>
+    </div>
+
+</body>
+</html>

@@ -5,310 +5,377 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class PasswordGenerator {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final int MAX_GENERATION_ATTEMPTS = 1000;
+    private static final int MIN_AVAILABLE_CHARACTERS = 4;
+
     private final List<Character> digitsList;
     private final List<Character> symbolsList;
     private final List<Character> lettersList;
+    private final SecureRandom secureRandom;
 
     public PasswordGenerator(String digitsList, String symbolsList, String lettersList) {
-        this.digitsList = fromString(digitsList);
-        this.symbolsList = fromString(symbolsList);
-        this.lettersList = fromString(lettersList);
+        validateConstructorInputs(digitsList, symbolsList, lettersList);
+        this.digitsList = List.copyOf(fromString(digitsList));
+        this.symbolsList = List.copyOf(fromString(symbolsList));
+        this.lettersList = List.copyOf(fromString(lettersList));
+        this.secureRandom = new SecureRandom();
     }
 
-    public String generatePassword(String jsonRules) {
+    public String generatePassword(String jsonRules) throws SecurityException {
+        validateJsonInput(jsonRules);
 
         try {
-
             var passwordRules = hydrateRules(jsonRules);
+            validatePasswordRules(passwordRules);
+            
 
-            if (!areValidRules(passwordRules)) {
-                throw new RuntimeException("Rules not valid");
+            for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
+                var candidatePassword = createSecurePassword(passwordRules);
+                if (isValidPassword(candidatePassword, passwordRules)) {
+                    return convertPasswordToString(candidatePassword);
+                }
             }
 
-            boolean notValidPassword = true;
-            List<Character> validPassword = new ArrayList<>();
-
-            do {
-
-                var possiblyPassword =
-                        IntStream.range(0, Runtime.getRuntime().availableProcessors())
-                                .mapToObj(index -> createPossiblePassword((int) passwordRules.getMaxLength(), passwordRules))
-                                .filter(freshPassword -> isValidPassword(freshPassword, passwordRules))
-                                .findFirst();
-
-                if (possiblyPassword.isEmpty()) {
-                    continue;
-                }
-
-                notValidPassword = false;
-                validPassword = possiblyPassword.get();
-
-            } while (notValidPassword);
-
-
-            return validPassword.stream()
-                    .map(character -> character + "")
-                    .reduce("", (prev, next) -> prev + next);
+            throw new SecurityException("Unable to generate password meeting security requirements after maximum attempts");
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new SecurityException("Invalid password rules format", e);
         }
-
     }
 
-    private List<Character> createPossiblePassword(int maxLength, PasswordRulesInformation passwordRulesInformation) {
+    private void validateConstructorInputs(String digits, String symbols, String letters) {
+        if (digits == null || symbols == null || letters == null) {
+            throw new SecurityException("Character sets cannot be null");
+        }
+        if (digits.isEmpty() && symbols.isEmpty() && letters.isEmpty()) {
+            throw new SecurityException("At least one character set must be non-empty");
+        }
+    }
 
-        var random = new SecureRandom();
+    private void validateJsonInput(String jsonRules) {
+        if (jsonRules == null || jsonRules.trim().isEmpty()) {
+            throw new SecurityException("Password rules cannot be null or empty");
+        }
+    }
 
-        var password = new ArrayList<Character>();
-
-        var digits2 = passwordRulesInformation.getIncludedDigits().stream().map(digit -> ("" + digit).charAt(0)).toList();
-        var range = new ArrayList<>(List.copyOf(digits2));
-        range.addAll(passwordRulesInformation.getIncludedSymbols());
-        range.addAll(passwordRulesInformation.getIncludedLetters());
-
-        if (range.isEmpty()) {
-            range.addAll(digitsList);
-            range.addAll(lettersList);
-            range.addAll(symbolsList);
+    private void validatePasswordRules(PasswordRulesInformation rules) throws SecurityException {
+        if (!areValidRules(rules)) {
+            throw new SecurityException("Invalid password rules configuration");
         }
 
-        for (int i = 0; i < maxLength; i++) {
-            var randomIndex = random.nextInt(range.size());
-            var randomChar = range.get(randomIndex);
-
-            password.add(randomChar);
+        if (!areRulesFeasible(rules)) {
+            throw new SecurityException("Password rules are mathematically impossible to satisfy");
         }
+    }
+
+    private boolean areRulesFeasible(PasswordRulesInformation rules) {
+        long minRequiredLength = rules.getMinNumberOfDigits() + rules.getMinNumberOfSymbols();
+        if (minRequiredLength > rules.getMaxLength()) {
+            return false;
+        }
+
+        var availableDigits = getAvailableCharacters(digitsList, rules.getExcludedDigits(), rules.getIncludedDigits());
+        var availableSymbols = getAvailableCharacters(symbolsList, rules.getExcludedSymbols(), rules.getIncludedSymbols());
+        var availableLetters = getAvailableCharacters(lettersList, rules.getExcludedLetters(), rules.getIncludedLetters());
+
+        if (rules.getMinNumberOfDigits() > 0 && availableDigits.isEmpty()) {
+            return false;
+        }
+        if (rules.getMinNumberOfSymbols() > 0 && availableSymbols.isEmpty()) {
+            return false;
+        }
+        if (!rules.getIncludedLetters().isEmpty() && availableLetters.isEmpty()) {
+            return false;
+        }
+
+        // Para longitudes muy cortas (1-3 caracteres), relajar la restricción de MIN_AVAILABLE_CHARACTERS
+        // si no hay requisitos mínimos específicos de dígitos o símbolos
+        if (rules.getMaxLength() <= 3 && rules.getMinNumberOfDigits() == 0 && rules.getMinNumberOfSymbols() == 0) {
+            return !availableDigits.isEmpty() || !availableSymbols.isEmpty() || !availableLetters.isEmpty();
+        }
+
+        return (availableDigits.size() + availableSymbols.size() + availableLetters.size()) >= MIN_AVAILABLE_CHARACTERS;
+    }
+
+    private List<Character> createSecurePassword(PasswordRulesInformation rules) {
+        int targetLength = generateSecureLength(rules.getMinLength(), rules.getMaxLength());
+        List<Character> password = new ArrayList<>(targetLength);
+
+        addMandatoryIncludedCharacters(password, rules);
+        addMinimumRequiredCharacters(password, rules, targetLength);
+        fillRemainingPositions(password, targetLength, rules);
+        shufflePasswordSecurely(password);
 
         return password;
     }
 
-    private boolean isValidPassword(List<Character> password, PasswordRulesInformation passwordRulesInformation) {
-
-        var lengthValidation =
-                (password.size() >= passwordRulesInformation.getMinLength())
-                        && (password.size() <= passwordRulesInformation.getMaxLength());
-
-
-        return lengthValidation
-                && areDigitsValid(password, passwordRulesInformation)
-                && areSymbolsValid(password, passwordRulesInformation)
-                && areLettersValid(password, passwordRulesInformation);
-
+    private void addMandatoryIncludedCharacters(List<Character> password, PasswordRulesInformation rules) {
+        rules.getIncludedDigits().forEach(digit -> password.add(Character.forDigit(digit, 10)));
+        password.addAll(rules.getIncludedSymbols());
+        password.addAll(rules.getIncludedLetters());
     }
 
-    private boolean areDigitsValid(List<Character> password, PasswordRulesInformation passwordRulesInformation) {
-        var digitsCount = password.stream().filter(digitsList::contains).count();
+    private void addMinimumRequiredCharacters(List<Character> password, PasswordRulesInformation rules, int targetLength) {
+        int currentDigits = countDigitsInPassword(password);
+        int currentSymbols = countSymbolsInPassword(password);
 
-        var allDigitsValidity = false;
+        var availableDigits = getAvailableCharacters(digitsList, rules.getExcludedDigits(), rules.getIncludedDigits());
+        var availableSymbols = getAvailableCharacters(symbolsList, rules.getExcludedSymbols(), rules.getIncludedSymbols());
 
-        if (passwordRulesInformation.getExcludedDigits().isEmpty() && passwordRulesInformation.getIncludedDigits().isEmpty()) {
-            allDigitsValidity = true;
-        } else if (passwordRulesInformation.getIncludedDigits().isEmpty()) {
-            allDigitsValidity = password.stream()
-                    .noneMatch(
-                            character ->
-                                    passwordRulesInformation.getExcludedDigits()
-                                            .stream()
-                                            .map(d -> "" + d)
-                                            .anyMatch(("" + character)::equals)
-                    );
-
-        } else if (passwordRulesInformation.getExcludedDigits().isEmpty()) {
-            allDigitsValidity = password.stream()
-                    .anyMatch(
-                            character ->
-                                    passwordRulesInformation.getIncludedDigits()
-                                            .stream()
-                                            .map(d -> "" + d)
-                                            .anyMatch(("" + character)::equals)
-                    );
-
-        } else {
-            allDigitsValidity = password.stream()
-                    .anyMatch(
-                            character ->
-                                    passwordRulesInformation.getIncludedDigits()
-                                            .stream()
-                                            .map(d -> "" + d)
-                                            .anyMatch(("" + character)::equals)
-                    );
+        while (currentDigits < rules.getMinNumberOfDigits() && password.size() < targetLength && !availableDigits.isEmpty()) {
+            password.add(availableDigits.get(secureRandom.nextInt(availableDigits.size())));
+            currentDigits++;
         }
 
-        return
-                (digitsCount >= passwordRulesInformation.getMinNumberOfDigits())
-                        && (digitsCount <= passwordRulesInformation.getMaxNumberOfDigits())
-                        && allDigitsValidity;
+        while (currentSymbols < rules.getMinNumberOfSymbols() && password.size() < targetLength && !availableSymbols.isEmpty()) {
+            password.add(availableSymbols.get(secureRandom.nextInt(availableSymbols.size())));
+            currentSymbols++;
+        }
     }
 
-    private boolean areSymbolsValid(List<Character> password, PasswordRulesInformation passwordRulesInformation) {
-        var symbolsCount = password.stream().filter(symbolsList::contains).count();
+    private int countDigitsInPassword(List<Character> password) {
+        return (int) password.stream().filter(digitsList::contains).count();
+    }
 
-        var allSymbolsValidity = false;
+    private int countSymbolsInPassword(List<Character> password) {
+        return (int) password.stream().filter(symbolsList::contains).count();
+    }
 
-        if (passwordRulesInformation.getExcludedSymbols().isEmpty() && passwordRulesInformation.getIncludedSymbols().isEmpty()) {
-            allSymbolsValidity = true;
-        } else if (passwordRulesInformation.getIncludedSymbols().isEmpty()) {
-            allSymbolsValidity = password.stream()
-                    .noneMatch(
-                            character ->
-                                    passwordRulesInformation.getExcludedSymbols()
-                                            .stream()
-                                            .anyMatch(d -> character == d)
-                    );
+    private int generateSecureLength(long minLength, long maxLength) {
+        if (minLength == maxLength) {
+            return (int) minLength;
+        }
+        return ThreadLocalRandom.current().nextInt((int) minLength, (int) maxLength + 1);
+    }
 
-        } else if (passwordRulesInformation.getExcludedSymbols().isEmpty()) {
-            allSymbolsValidity = password.stream()
-                    .anyMatch(
-                            character ->
-                                    passwordRulesInformation.getIncludedSymbols()
-                                            .stream()
-                                            .anyMatch(d -> character == d)
-                    );
+    private void fillRemainingPositions(List<Character> password, int targetLength,
+                                        PasswordRulesInformation rules) {
+        var allAvailableCharacters = createCombinedCharacterPool(rules);
 
-        } else {
-            allSymbolsValidity = password.stream()
-                    .anyMatch(
-                            character ->
-                                    passwordRulesInformation.getIncludedSymbols()
-                                            .stream()
-                                            .anyMatch(d -> character == d)
-                    );
+        while (password.size() < targetLength && !allAvailableCharacters.isEmpty()) {
+            password.add(allAvailableCharacters.get(secureRandom.nextInt(allAvailableCharacters.size())));
+        }
+    }
+
+    private List<Character> createCombinedCharacterPool(PasswordRulesInformation rules) {
+        List<Character> combined = new ArrayList<>();
+        combined.addAll(getAvailableCharacters(digitsList, rules.getExcludedDigits(), rules.getIncludedDigits()));
+        combined.addAll(getAvailableCharacters(symbolsList, rules.getExcludedSymbols(), rules.getIncludedSymbols()));
+        combined.addAll(getAvailableCharacters(lettersList, rules.getExcludedLetters(), rules.getIncludedLetters()));
+        return combined;
+    }
+
+    private <T> List<Character> getAvailableCharacters(List<Character> sourceList,
+                                                     List<T> excluded, List<T> included) {
+        if (!included.isEmpty()) {
+            return included.stream()
+                    .map(Object::toString)
+                    .map(s -> s.charAt(0))
+                    .filter(sourceList::contains)
+                    .toList();
         }
 
-        return
-                (symbolsCount >= passwordRulesInformation.getMinNumberOfSymbols())
-                        && (symbolsCount <= passwordRulesInformation.getMaxNumberOfSymbols())
-                        && allSymbolsValidity;
+        return sourceList.stream()
+                .filter(ch -> !excluded.contains(getComparableValue(ch, excluded)))
+                .toList();
     }
 
-    private boolean areLettersValid(List<Character> password, PasswordRulesInformation passwordRulesInformation) {
-
-        var allLettersValidity = false;
-
-        if (passwordRulesInformation.getExcludedLetters().isEmpty() && passwordRulesInformation.getIncludedLetters().isEmpty()) {
-            allLettersValidity = true;
-        } else if (passwordRulesInformation.getIncludedLetters().isEmpty()) {
-            allLettersValidity = password.stream()
-                    .noneMatch(
-                            character ->
-                                    passwordRulesInformation.getExcludedLetters()
-                                            .stream()
-                                            .anyMatch(d -> character == d)
-                    );
-
-        } else if (passwordRulesInformation.getExcludedLetters().isEmpty()) {
-            allLettersValidity = password.stream()
-                    .anyMatch(
-                            character ->
-                                    passwordRulesInformation.getIncludedLetters()
-                                            .stream()
-                                            .anyMatch(d -> character == d)
-                    );
-
-        } else {
-            allLettersValidity = password.stream()
-                    .anyMatch(
-                            character ->
-                                    passwordRulesInformation.getIncludedLetters()
-                                            .stream()
-                                            .anyMatch(d -> character == d)
-                    );
+    private <T> T getComparableValue(Character ch, List<T> excludedList) {
+        if (excludedList.isEmpty()) {
+            return null;
         }
 
-        return allLettersValidity;
+        T firstItem = excludedList.get(0);
+        if (firstItem instanceof Integer) {
+            return (T) Integer.valueOf(Character.getNumericValue(ch));
+        }
+        return (T) ch;
     }
 
+    private void shufflePasswordSecurely(List<Character> password) {
+        for (int i = password.size() - 1; i > 0; i--) {
+            int randomIndex = secureRandom.nextInt(i + 1);
+            Collections.swap(password, i, randomIndex);
+        }
+    }
 
-    private boolean areValidRules(PasswordRulesInformation rulesInformation) {
+    private String convertPasswordToString(List<Character> password) {
+        return password.stream()
+                .map(String::valueOf)
+                .reduce("", String::concat);
+    }
 
-        return rulesInformation.getMinLength() <= rulesInformation.getMaxLength()
-                && rulesInformation.getMinNumberOfDigits() <= rulesInformation.getMaxNumberOfDigits()
-                && rulesInformation.getMinNumberOfSymbols() <= rulesInformation.getMaxNumberOfSymbols();
+    private boolean isValidPassword(List<Character> password, PasswordRulesInformation rules) {
+        return isValidLength(password, rules) &&
+                hasValidDigitCount(password, rules) &&
+                hasValidSymbolCount(password, rules) &&
+                hasValidLetterRequirements(password, rules);
+    }
 
+    private boolean isValidLength(List<Character> password, PasswordRulesInformation rules) {
+        return password.size() >= rules.getMinLength() && password.size() <= rules.getMaxLength();
+    }
+
+    private boolean hasValidDigitCount(List<Character> password, PasswordRulesInformation rules) {
+        long digitCount = password.stream().filter(digitsList::contains).count();
+        return digitCount >= rules.getMinNumberOfDigits() &&
+                digitCount <= rules.getMaxNumberOfDigits() &&
+                hasValidDigitRequirements(password, rules);
+    }
+
+    private boolean hasValidSymbolCount(List<Character> password, PasswordRulesInformation rules) {
+        long symbolCount = password.stream().filter(symbolsList::contains).count();
+        return symbolCount >= rules.getMinNumberOfSymbols() &&
+                symbolCount <= rules.getMaxNumberOfSymbols() &&
+                hasValidSymbolRequirements(password, rules);
+    }
+
+    private boolean hasValidDigitRequirements(List<Character> password, PasswordRulesInformation rules) {
+        if (!rules.getExcludedDigits().isEmpty()) {
+            boolean hasExcludedDigits = password.stream()
+                    .filter(digitsList::contains)
+                    .map(Character::getNumericValue)
+                    .anyMatch(rules.getExcludedDigits()::contains);
+            if (hasExcludedDigits) {
+                return false;
+            }
+        }
+
+        if (!rules.getIncludedDigits().isEmpty()) {
+            return rules.getIncludedDigits().stream()
+                    .allMatch(digit -> password.contains(Character.forDigit(digit, 10)));
+        }
+
+        return true;
+    }
+
+    private boolean hasValidSymbolRequirements(List<Character> password, PasswordRulesInformation rules) {
+        if (!rules.getExcludedSymbols().isEmpty()) {
+            boolean hasExcludedSymbols = password.stream()
+                    .filter(symbolsList::contains)
+                    .anyMatch(rules.getExcludedSymbols()::contains);
+            if (hasExcludedSymbols) {
+                return false;
+            }
+        }
+
+        if (!rules.getIncludedSymbols().isEmpty()) {
+            return rules.getIncludedSymbols().stream()
+                    .allMatch(password::contains);
+        }
+
+        return true;
+    }
+
+    private boolean hasValidLetterRequirements(List<Character> password, PasswordRulesInformation rules) {
+        if (!rules.getExcludedLetters().isEmpty()) {
+            boolean hasExcludedLetters = password.stream()
+                    .filter(lettersList::contains)
+                    .anyMatch(rules.getExcludedLetters()::contains);
+            if (hasExcludedLetters) {
+                return false;
+            }
+        }
+
+        if (!rules.getIncludedLetters().isEmpty()) {
+            return rules.getIncludedLetters().stream()
+                    .allMatch(password::contains);
+        }
+
+        return true;
+    }
+
+    private boolean areValidRules(PasswordRulesInformation rules) {
+        return rules.getMinLength() <= rules.getMaxLength() &&
+                rules.getMinLength() > 0 &&
+                rules.getMaxLength() > 0 &&
+                rules.getMinNumberOfDigits() <= rules.getMaxNumberOfDigits() &&
+                rules.getMinNumberOfSymbols() <= rules.getMaxNumberOfSymbols() &&
+                rules.getMinNumberOfDigits() >= 0 &&
+                rules.getMaxNumberOfDigits() >= 0 &&
+                rules.getMinNumberOfSymbols() >= 0 &&
+                rules.getMaxNumberOfSymbols() >= 0;
     }
 
     private PasswordRulesInformation hydrateRules(String jsonRules) throws JsonProcessingException {
         var json = OBJECT_MAPPER.readTree(jsonRules);
-        var passwordRulesInformation = new PasswordRulesInformation();
+        var passwordRules = new PasswordRulesInformation();
 
-        if (json.get("length").hasNonNull("min")) {
-            passwordRulesInformation.setMinLength(json.get("length").get("min").asLong());
+        if (json.has("length") && json.get("length").hasNonNull("min")) {
+            passwordRules.setMinLength(json.get("length").get("min").asLong());
         }
 
-        if (json.get("length").hasNonNull("max")) {
-            passwordRulesInformation.setMaxLength(json.get("length").get("max").asLong());
+        if (json.has("length") && json.get("length").hasNonNull("max")) {
+            passwordRules.setMaxLength(json.get("length").get("max").asLong());
         }
 
-        if (json.get("digits").hasNonNull("min")) {
-            passwordRulesInformation.setMinNumberOfDigits(json.get("digits").get("min").asLong());
+        if (json.has("digits") && json.get("digits").hasNonNull("min")) {
+            passwordRules.setMinNumberOfDigits(json.get("digits").get("min").asLong());
         }
 
-        if (json.get("digits").hasNonNull("max")) {
-            passwordRulesInformation.setMaxNumberOfDigits(json.get("digits").get("max").asLong());
+        if (json.has("digits") && json.get("digits").hasNonNull("max")) {
+            passwordRules.setMaxNumberOfDigits(json.get("digits").get("max").asLong());
         }
 
-
-        if (json.get("symbols").hasNonNull("min")) {
-            passwordRulesInformation.setMinNumberOfSymbols(json.get("symbols").get("min").asLong());
+        if (json.has("symbols") && json.get("symbols").hasNonNull("min")) {
+            passwordRules.setMinNumberOfSymbols(json.get("symbols").get("min").asLong());
         }
 
-        if (json.get("symbols").hasNonNull("max")) {
-            passwordRulesInformation.setMaxNumberOfSymbols(json.get("symbols").get("max").asLong());
+        if (json.has("symbols") && json.get("symbols").hasNonNull("max")) {
+            passwordRules.setMaxNumberOfSymbols(json.get("symbols").get("max").asLong());
         }
 
-
-        if (json.get("digits").hasNonNull("exclude")) {
+        if (json.has("digits") && json.get("digits").hasNonNull("exclude")) {
             for (var excluded : json.get("digits").get("exclude")) {
-                passwordRulesInformation.getExcludedDigits().add(excluded.asInt());
+                passwordRules.getExcludedDigits().add(excluded.asInt());
             }
         }
 
-        if (json.get("digits").hasNonNull("include")) {
+        if (json.has("digits") && json.get("digits").hasNonNull("include")) {
             for (var included : json.get("digits").get("include")) {
-                passwordRulesInformation.getIncludedDigits().add(included.asInt());
+                passwordRules.getIncludedDigits().add(included.asInt());
             }
         }
 
-        if (json.get("symbols").hasNonNull("exclude")) {
+        if (json.has("symbols") && json.get("symbols").hasNonNull("exclude")) {
             for (var excluded : json.get("symbols").get("exclude")) {
-                passwordRulesInformation.getExcludedSymbols().add(excluded.asText().charAt(0));
+                passwordRules.getExcludedSymbols().add(excluded.asText().charAt(0));
             }
         }
 
-        if (json.get("symbols").hasNonNull("include")) {
+        if (json.has("symbols") && json.get("symbols").hasNonNull("include")) {
             for (var included : json.get("symbols").get("include")) {
-                passwordRulesInformation.getIncludedSymbols().add(included.asText().charAt(0));
+                passwordRules.getIncludedSymbols().add(included.asText().charAt(0));
             }
         }
 
-        if (json.get("letters").hasNonNull("exclude")) {
+        if (json.has("letters") && json.get("letters").hasNonNull("exclude")) {
             for (var excluded : json.get("letters").get("exclude")) {
-                passwordRulesInformation.getExcludedLetters().add(excluded.asText().charAt(0));
+                passwordRules.getExcludedLetters().add(excluded.asText().charAt(0));
             }
         }
 
-        if (json.get("letters").hasNonNull("include")) {
+        if (json.has("letters") && json.get("letters").hasNonNull("include")) {
             for (var included : json.get("letters").get("include")) {
-                passwordRulesInformation.getIncludedLetters().add(included.asText().charAt(0));
+                passwordRules.getIncludedLetters().add(included.asText().charAt(0));
             }
         }
 
-        return passwordRulesInformation;
+        return passwordRules;
     }
 
     private List<Character> fromString(String str) {
-        var result = new ArrayList<Character>();
-        for (var c : str.toCharArray()) {
-            result.add(c);
-        }
-
-        return result;
+        Objects.requireNonNull(str, "Character set string cannot be null");
+        return str.chars()
+                .mapToObj(c -> (char) c)
+                .toList();
     }
 }

@@ -8,11 +8,11 @@ public class PasswordRulesInformation {
     private long minLength = 1;
     private long maxLength = 30;
     private long minNumberOfDigits = 0;
-    private long maxNumberOfDigits = maxLength;
+    private long maxNumberOfDigits = 30;
     private List<Integer> excludedDigits = new ArrayList<>();
     private List<Integer> includedDigits = new ArrayList<>();
     private long minNumberOfSymbols = 0;
-    private long maxNumberOfSymbols = maxLength;
+    private long maxNumberOfSymbols = 30;
     private List<Character> excludedSymbols = new ArrayList<>();
     private List<Character> includedSymbols = new ArrayList<>();
     private List<Character> excludedLetters = new ArrayList<>();
@@ -32,6 +32,13 @@ public class PasswordRulesInformation {
 
     public void setMaxLength(long maxLength) {
         this.maxLength = maxLength;
+        // Actualizar automáticamente los límites máximos para mantener consistencia
+        if (this.maxNumberOfDigits > maxLength) {
+            this.maxNumberOfDigits = maxLength;
+        }
+        if (this.maxNumberOfSymbols > maxLength) {
+            this.maxNumberOfSymbols = maxLength;
+        }
     }
 
     public long getMinNumberOfDigits() {
