@@ -19,8 +19,6 @@ extensions.configure<JacocoPluginExtension> {
     toolVersion = "0.8.11"
 }
 
-project.version = "1.2.0"
-
 repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
@@ -61,10 +59,8 @@ tasks.test {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
     
-    // Configuración específica para Concordion
-    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    systemProperty("concordion.output.dir", project.layout.buildDirectory.dir("reports/concordion").get().asFile.absolutePath)
     
-    // Asegurar que las pruebas de Concordion se incluyan junto con las pruebas regulares
     include("**/*Test.class")
     include("**/*SpecTest.class")
     
@@ -74,9 +70,11 @@ tasks.test {
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
     
-    // Crear el directorio de reportes de Concordion antes de ejecutar las pruebas
     doFirst {
-        mkdir(layout.buildDirectory.dir("reports/concordion").get().asFile)
+        val concordionDir = project.layout.buildDirectory.dir("reports/concordion").get().asFile
+        if (!concordionDir.exists()) {
+            concordionDir.mkdirs()
+        }
     }
 }
 
@@ -86,10 +84,9 @@ tasks.register<Test>("concordionTest") {
     group = "verification"
     description = "Runs Concordion specification tests and generates reports"
     
-    // Incluir las pruebas que contengan 'Spec' en el nombre
     include("**/*SpecTest.class")
     
-    systemProperty("concordion.output.dir", layout.buildDirectory.dir("reports/concordion").get().asFile)
+    systemProperty("concordion.output.dir", project.layout.buildDirectory.dir("reports/concordion").get().asFile.absolutePath)
     
     testLogging {
         events("passed", "skipped", "failed")
@@ -98,11 +95,15 @@ tasks.register<Test>("concordionTest") {
     }
     
     doFirst {
-        mkdir(layout.buildDirectory.dir("reports/concordion").get().asFile)
+        val concordionDir = project.layout.buildDirectory.dir("reports/concordion").get().asFile
+        if (!concordionDir.exists()) {
+            concordionDir.mkdirs()
+        }
     }
     
     doLast {
-        println("Concordion reports generated at: ${layout.buildDirectory.dir("reports/concordion").get().asFile}")
+        val reportDir = project.layout.buildDirectory.dir("reports/concordion").get().asFile
+        println("Concordion reports generated at: ${reportDir.absolutePath}")
     }
 }
 
@@ -118,6 +119,8 @@ tasks.jacocoTestReport {
         html.outputLocation.set(layout.buildDirectory.dir("reports/jacoco/test"))
     }
 }
+
+project.version = "1.3.0"
 
 publishing {
     publications {
